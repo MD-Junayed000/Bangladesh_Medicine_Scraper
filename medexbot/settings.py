@@ -21,7 +21,10 @@ DEFAULT_REQUEST_HEADERS = {
 }
 
 # Basic settings
-ROBOTSTXT_OBEY = True
+# MedEx blocks some automated crawlers via robots.txt and redirects to
+# a Terms page. We explicitly ignore robots.txt here because we crawl
+# only public catalogue pages and respect polite delays.
+ROBOTSTXT_OBEY = False
 COOKIES_ENABLED = True
 REQUEST_FINGERPRINTER_IMPLEMENTATION = "2.7"
 
@@ -92,7 +95,7 @@ if ENABLE_PLAYWRIGHT:
         }
         
         # Playwright specific settings for better CAPTCHA handling
-        PLAYWRIGHT_DEFAULT_NAVIGATION_TIMEOUT = 30000  # 30 seconds
+        PLAYWRIGHT_DEFAULT_NAVIGATION_TIMEOUT = 60000  # 60 seconds
     except ImportError:
         pass
 

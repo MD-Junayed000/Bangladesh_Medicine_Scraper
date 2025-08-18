@@ -76,9 +76,19 @@ class GenericFilter(AutocompleteFilter):
 
 @admin.register(Medicine)
 class MedicineAdmin(admin.ModelAdmin):
-    list_display = ('brand_id', 'brand_name', 'dosage_form', 'generic', 'manufacturer', 'type')
+    list_display = (
+        'brand_id',
+        'brand_name',
+        'dosage_form',
+        'strength',
+        'package_container',
+        'pack_size_info',
+        'generic',
+        'manufacturer',
+        'type',
+    )
     list_filter = (GenericFilter, AlphabetFilter, 'type', 'created', 'dosage_form', )
-    search_fields = ('brand_name', 'dosage_form')
+    search_fields = ('brand_name', 'dosage_form', 'strength', 'pack_size_info')
     prepopulated_fields = {'slug': ('brand_name',)}
     raw_id_fields = ('generic', 'manufacturer')
     date_hierarchy = 'created'
@@ -88,9 +98,15 @@ class MedicineAdmin(admin.ModelAdmin):
 
 @admin.register(Generic)
 class GenericAdmin(admin.ModelAdmin):
-    list_display = ('generic_id', 'generic_name', 'monograph_link', 'drug_class', 'indication', 'descriptions_count')
+    list_display = (
+        'generic_id', 'generic_name', 'monograph_link', 'descriptions_count',
+        'indication_description', 'therapeutic_class_description', 'pharmacology_description',
+        'dosage_description', 'pregnancy_and_lactation_description', 'precautions_description',
+        'pediatric_usage_description', 'overdose_effects_description',
+        'storage_conditions_description', 'side_effects_description',
+    )
     list_filter = ('created', 'descriptions_count', AlphabetFilter)
-    search_fields = ('generic_name',)
+    search_fields = ('generic_name', 'monograph_link')
     prepopulated_fields = {'slug': ('generic_name',)}
     raw_id_fields = ('drug_class', 'indication')
     date_hierarchy = 'created'
@@ -143,3 +159,14 @@ class DrugClassAdmin(admin.ModelAdmin):
     date_hierarchy = 'created'
     ordering = ('created',)
     actions = [export_to_csv]
+
+# --- Hide specific models from admin sidebar without touching database ---
+try:
+    admin.site.unregister(DosageForm)
+except admin.sites.NotRegistered:
+    pass
+
+try:
+    admin.site.unregister(Indication)
+except admin.sites.NotRegistered:
+    pass

@@ -105,6 +105,25 @@ class GenericSpider(scrapy.Spider):
         
         # Extract monograph link
         item['monograph_link'] = response.css('span.hidden-sm a ::attr(href)').get()
+
+        # Extract FK links (drug class and indication) and keep IDs as hints
+        try:
+            drug_class_href = response.css('div#drug_classes a::attr(href)').get()
+            if drug_class_href:
+                dc_match = re.search(r"drug-classes/(\d+)/", drug_class_href)
+                if dc_match:
+                    item['drug_class_id_hint'] = dc_match.group(1)
+        except Exception:
+            pass
+
+        try:
+            indication_href = response.css('div#indications a::attr(href)').get()
+            if indication_href:
+                ind_match = re.search(r"indications/(\d+)/", indication_href)
+                if ind_match:
+                    item['indication_id_hint'] = ind_match.group(1)
+        except Exception:
+            pass
         
         # Extract all descriptions using XPath
         item['indication_description'] = self._extract_description(response, 'indications')

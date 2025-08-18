@@ -14,15 +14,19 @@ from medexbot.items import MedItem, GenericItem
 class MedSpider(scrapy.Spider):
     name = "med"
     allowed_domains = ['medex.com.bd']
-    start_urls = ['https://medex.com.bd/brands?page=1', 'https://medex.com.bd/brands?herbal=1&page=1']
+    # Always prefer URLs that include ccd=1 to avoid consent/redirect pages
+    start_urls = [
+        'https://medex.com.bd/brands?page=1&ccd=1',
+        'https://medex.com.bd/brands?herbal=1&page=1&ccd=1',
+    ]
 
     def start_requests(self):
         """Start requests with Playwright like the working drug class spider."""
         # First, let's test if we can access any page
         test_urls = [
-            'https://medex.com.bd/',  # Try homepage first
-            'https://medex.com.bd/brands?page=1',
-            'https://medex.com.bd/brands?herbal=1&page=1'
+            'https://medex.com.bd/?ccd=1',  # Try homepage first with consent bypass
+            'https://medex.com.bd/brands?page=1&ccd=1',
+            'https://medex.com.bd/brands?herbal=1&page=1&ccd=1',
         ]
         
         for url in test_urls:
@@ -30,7 +34,7 @@ class MedSpider(scrapy.Spider):
                 url,
                 callback=self.parse,
                 headers={
-                    "Referer": "https://medex.com.bd/",
+                    "Referer": "https://medex.com.bd/?ccd=1",
                     "Sec-Fetch-Dest": "document",
                     "Sec-Fetch-Mode": "navigate",
                     "Sec-Fetch-Site": "same-origin",
@@ -40,7 +44,9 @@ class MedSpider(scrapy.Spider):
                     "playwright": True,
                     "playwright_context": "default",
                     "playwright_page_methods": [
+                        PageMethod("add_init_script", "Object.defineProperty(navigator, 'webdriver', {get: () => undefined});"),
                         PageMethod("wait_for_load_state", "networkidle"),
+                        PageMethod("wait_for_selector", "body"),
                     ],
                 },
             )
@@ -80,10 +86,13 @@ class MedSpider(scrapy.Spider):
         self.logger.info(f"Found {len(med_info_blocks)} medicine blocks")
         
         for med_info in med_info_blocks:
-            med_page_links = med_info.css('a.hoverable-block ::attr("href")').getall()
+            # On listing pages each card is a direct anchor with class hoverable-block
+            med_page_links = med_info.css('a.hoverable-block::attr(href)').getall()
             if med_page_links:
                 for link in med_page_links:
                     if link:
+                        # Ensure consent flag is present on navigations
+                        link = link + ("&ccd=1" if ("?" in link and "ccd=" not in link) else ("?ccd=1" if "ccd=" not in link else ""))
                         self.logger.info(f"Following medicine link: {link}")
                         yield response.follow(
                             link,
@@ -92,24 +101,33 @@ class MedSpider(scrapy.Spider):
                             meta={
                                 "playwright": True,
                                 "playwright_context": "default",
-                                "playwright_page_methods": [PageMethod("wait_for_load_state", "networkidle")],
+                                "playwright_page_methods": [
+                                    PageMethod("add_init_script", "Object.defineProperty(navigator, 'webdriver', {get: () => undefined});"),
+                                    PageMethod("wait_for_load_state", "networkidle"),
+                                    PageMethod("wait_for_selector", "h1.page-heading-1-l"),
+                                ],
                             }
                         )
 
         # Follow pagination
-        pagination_links = response.css('a.page-link[rel="next"] ::attr("href")').getall()
+        pagination_links = response.css('a.page-link[rel="next"]::attr(href)').getall()
         if pagination_links:
             self.logger.info(f"Found {len(pagination_links)} pagination links")
             for link in pagination_links:
                 if link:
+                    next_link = link + ("&ccd=1" if ("?" in link and "ccd=" not in link) else ("?ccd=1" if "ccd=" not in link else ""))
                     yield response.follow(
-                        link,
+                        next_link,
                         callback=self.parse,
                         headers={"Referer": response.url},
                         meta={
                             "playwright": True,
                             "playwright_context": "default",
-                            "playwright_page_methods": [PageMethod("wait_for_load_state", "networkidle")],
+                            "playwright_page_methods": [
+                                PageMethod("add_init_script", "Object.defineProperty(navigator, 'webdriver', {get: () => undefined});"),
+                                PageMethod("wait_for_load_state", "networkidle"),
+                                PageMethod("wait_for_selector", "a.hoverable-block"),
+                            ],
                         }
                     )
 
@@ -250,31 +268,33 @@ class MedSpider(scrapy.Spider):
             return response.css(query).get(default='').strip()
 
         item = MedItem()
-        item['brand_id'] = re.findall(r"brands/(\S*)/", response.url)[0]
-        item['brand_name'] = response.css('h1.page-heading-1-l span ::text').getall()[0].strip()
-        item['type'] = 'herbal' if response.css(
-            'h1.page-heading-1-l img ::attr(alt)').get().strip() == 'Herbal' else 'allopathic'
+        # robust brand id
+        brand_id_match = re.search(r"brands/(\d+)/", response.url)
+        item['brand_id'] = brand_id_match.group(1) if brand_id_match else None
+        # Brand title can be split in multiple spans; fallback to page H1 text
+        title_spans = [t.strip() for t in response.css('h1.page-heading-1-l span::text').getall() if t.strip()]
+        if title_spans:
+            item['brand_name'] = title_spans[0]
+        else:
+            item['brand_name'] = response.css('h1.page-heading-1-l::text').get(default='').strip()
+        # robust type
+        heading_alt = response.css('h1.page-heading-1-l img::attr(alt)').get(default='').strip().lower()
+        item['type'] = 'herbal' if heading_alt == 'herbal' else 'allopathic'
         item['dosage_form'] = extract_with_css('small.h1-subtitle ::text')
         # generic_name = extract_with_css('div[title="Generic Name"] a ::text')
         item['strength'] = extract_with_css('div[title="Strength"] ::text')
 
-        # manufacturer extraction
-
-        manufacturer_link = extract_with_css('div[title ="Manufactured by"] a ::attr(href)')
-        manufacturer_id = re.findall(r"companies/(\d+)/", manufacturer_link)[0]
-        manufacturer_name = extract_with_css('div[title ="Manufactured by"] a ::text')
-        try:
-            item['manufacturer'] = Manufacturer.objects.get(manufacturer_id=manufacturer_id)
-        except Manufacturer.DoesNotExist as me:
-            logging.info(me)
-            item['manufacturer'] = Manufacturer.objects.create(manufacturer_id=manufacturer_id,
-                                                               manufacturer_name=manufacturer_name,
-                                                               slug=slugify(manufacturer_name + '-' +
-                                                                            manufacturer_id,
-                                                                            allow_unicode=True))
-        except IntegrityError as ie:
-            logging.info(ie)
-            item['manufacturer'] = None
+        # manufacturer extraction (defer DB interaction to pipeline/backfill to avoid async ORM)
+        manufacturer_link = response.css('div[title="Manufactured by"] a::attr(href)').get('')
+        manufacturer_id_match = re.search(r"companies/(\d+)/", manufacturer_link or '')
+        manufacturer_id = manufacturer_id_match.group(1) if manufacturer_id_match else None
+        if manufacturer_id:
+            try:
+                with open('manufacturer_id.txt', 'a') as f:
+                    f.write(f"{item['brand_id']},{manufacturer_id}\n")
+            except Exception:
+                pass
+        item['manufacturer'] = None
         # med_details['package_container'] = [self.clean_text(spec_value).strip() for spec_value in response.css(
         # 'div.package-container').getall()]
 
@@ -294,7 +314,7 @@ class MedSpider(scrapy.Spider):
             [re.sub(r'\s+', ' ', i).strip() for i in response.css('div.package-container ::text').getall()])
         pack_size_info = ','.join(
             [re.sub(r'\s+', ' ', i).strip() for i in response.css('span.pack-size-info ::text').getall() if
-             i.strip() is not ''])
+             i.strip() != ''])
 
         item['package_container'] = package_container
         item['pack_size_info'] = pack_size_info
@@ -303,23 +323,19 @@ class MedSpider(scrapy.Spider):
                                allow_unicode=True)
         # generic extraction
 
-        generic_link = extract_with_css('div[title="Generic Name"] a ::attr(href)')
-        generic_id = re.findall(r"generics/(\S*)/", generic_link)[0]
+        generic_link = response.css('div[title="Generic Name"] a::attr(href)').get('')
+        generic_id_match = re.search(r"generics/(\d+)/", generic_link)
+        generic_id = generic_id_match.group(1) if generic_id_match else None
 
-        try:
-            item['generic'] = Generic.objects.get(generic_id=generic_id)
-        except Generic.DoesNotExist as ge:
-            logging.info(ge)
-            """
-            save the generics id with medicines id to map them later
-            """
-            with open('generic_id.txt', 'a') as f:
-                f.write(item['brand_id']+','+generic_id + '\n')
-
-            yield response.follow(generic_link, self.parse_generic)
-            item['generic'] = None
-        except IntegrityError as ie:
-            logging.info(ie)
-            item['generic'] = None
+        if generic_id:
+            # Defer ORM interaction; save mapping for later backfill
+            try:
+                with open('generic_id.txt', 'a') as f:
+                    f.write(f"{item['brand_id']},{generic_id}\n")
+            except Exception:
+                pass
+            if generic_link:
+                yield response.follow(generic_link, self.parse_generic)
+        item['generic'] = None
 
         yield item

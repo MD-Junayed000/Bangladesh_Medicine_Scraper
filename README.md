@@ -10,9 +10,64 @@ A powerful web scraping project that extracts pharmaceutical data from [medex.co
 - ✅ **No new browsers** - No Chromium spawning issues
 - ✅ **Stable scraping** - Reliable data collection
 
-## 🚀 **Quick Start**
+## 🚀 **Complete Setup Guide**
 
-### 1. **Setup Environment**
+> **💡 Quick Reference for Experienced Users:**
+> ```bash
+> # 1. Install PostgreSQL and create database
+> # 2. Create .env file with DB credentials
+> # 3. python -m venv .venv && source .venv/bin/activate
+> # 4. pip install -r requirements.txt
+> # 5. python manage.py migrate && python manage.py createsuperuser
+> # 6. python manage.py runserver
+> # 7. Open http://127.0.0.1:8000/admin/
+> ```
+
+### 1. **Install PostgreSQL**
+```bash
+# Download and install PostgreSQL from: https://www.postgresql.org/download/
+# Or use package manager:
+# Windows: Download installer from postgresql.org
+# Ubuntu/Debian: sudo apt-get install postgresql postgresql-contrib
+# macOS: brew install postgresql
+```
+
+### 2. **Setup PostgreSQL Database**
+```bash
+# Connect to PostgreSQL as superuser
+psql -U postgres
+
+# Create database and user (run these commands in psql)
+CREATE DATABASE bd_medicine_scraper;
+CREATE USER medicine_user WITH PASSWORD 'your_secure_password';
+GRANT ALL PRIVILEGES ON DATABASE bd_medicine_scraper TO medicine_user;
+ALTER USER medicine_user CREATEDB;
+\q
+
+# Expected output:
+# CREATE DATABASE
+# CREATE ROLE
+# GRANT
+# ALTER ROLE
+# You are now connected to database "bd_medicine_scraper" as user "medicine_user".
+```
+
+### 3. **Create Environment File**
+```bash
+# Create .env file in project root
+touch .env
+
+# Add database configuration to .env file:
+DB_NAME=bd_medicine_scraper
+DB_USERNAME=medicine_user
+DB_PASSWORD=your_secure_password
+DB_HOST=localhost
+DB_PORT=5432
+SECRET_KEY=your-secret-key-here
+DEBUG=True
+```
+
+### 4. **Setup Python Environment**
 ```bash
 # Create virtual environment
 python -m venv .venv
@@ -25,6 +80,56 @@ source .venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
+
+# Expected output: Successfully installed [packages...]
+```
+
+### 5. **Setup Django Database**
+```bash
+# Apply database migrations
+python manage.py makemigrations
+python manage.py migrate
+
+# Expected output:
+# Operations to perform:
+#   Apply all migrations: admin, auth, contenttypes, crawler, sessions
+# Running migrations:
+#   Applying [migration_name]... OK
+
+# Create Django superuser
+python manage.py createsuperuser
+# Follow prompts to create username, email, and password
+# Expected output: Superuser created successfully.
+```
+
+### 6. **Run Django Server**
+```bash
+# In a new terminal (keep virtual environment active)
+python manage.py runserver
+
+# Expected output:
+# Watching for file changes with StatReloader
+# Performing system checks...
+# System check identified no issues (0 silenced).
+# Django version 3.2.12, using settings 'core.settings'
+# Starting development server at http://127.0.0.1:8000/
+# Quit the server with CONTROL-C.
+
+# Open http://127.0.0.1:8000/admin/ in your browser
+# Login with your Django superuser account
+
+### 7. **Verify Setup**
+```bash
+# Check if server is running (should show Django welcome page)
+curl http://127.0.0.1:8000/
+
+# Check admin interface (should show login page)
+curl http://127.0.0.1:8000/admin/
+
+# Expected output: HTML content with Django admin interface
+```
+
+**🎉 Congratulations! Your Django server is now running successfully at http://127.0.0.1:8000/**
 ```
 
 ### 2. **Setup Chrome Session**
@@ -133,9 +238,30 @@ python save_state_from_chrome.py
 4. Retry your spider
 
 ### **Database Issues**
-- Pipeline is currently disabled to avoid async issues
-- Data is extracted and logged but not saved to database
-- To enable database saving, fix the pipeline async context
+```bash
+# If you get connection errors:
+# 1. Check if PostgreSQL is running:
+# Windows: Check Services app for "postgresql-x64-15"
+# Linux: sudo systemctl status postgresql
+# macOS: brew services list | grep postgresql
+
+# 2. Verify database connection:
+psql -U medicine_user -d bd_medicine_scraper -h localhost
+# Enter password when prompted
+
+# 3. Check .env file exists and has correct values:
+cat .env
+
+# 4. If migrations fail, reset database:
+python manage.py flush
+python manage.py migrate
+```
+
+### **Common Setup Issues**
+- **Port 5432 already in use**: Change DB_PORT in .env to 5433 or another free port
+- **Permission denied**: Ensure medicine_user has proper privileges on database
+- **Virtual environment not activated**: Look for (.venv) prefix in terminal prompt
+- **Dependencies not found**: Run `pip install -r requirements.txt` again
 
 ## 📈 **Data Output**
 
