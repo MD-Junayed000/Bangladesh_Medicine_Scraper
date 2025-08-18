@@ -1,11 +1,8 @@
-import logging
 import re
-
 import scrapy
-from django.db import IntegrityError
 from django.utils.text import slugify
+from scrapy_playwright.page import PageMethod
 
-from crawler.models import Generic, DrugClass
 from medexbot.items import DrugClassItem
 
 
@@ -14,56 +11,100 @@ class DrugClassSpider(scrapy.Spider):
     allowed_domains = ['medex.com.bd']
     start_urls = ['https://medex.com.bd/drug-classes']
 
+    def start_requests(self):
+        """Start requests with Playwright like the working generic spider."""
+        for url in self.start_urls:
+            yield scrapy.Request(
+                url,
+                callback=self.parse,
+                headers={
+                    "Referer": "https://medex.com.bd/",
+                    "Sec-Fetch-Dest": "document",
+                    "Sec-Fetch-Mode": "navigate",
+                    "Sec-Fetch-Site": "same-origin",
+                    "Sec-Fetch-User": "?1",
+                },
+                meta={
+                    "playwright": True,
+                    "playwright_context": "default",
+                    "playwright_page_methods": [
+                        PageMethod("wait_for_load_state", "networkidle"),
+                    ],
+                },
+            )
+
     def parse(self, response, **kwargs):
-        # todo fetch all drug classes' links
-        # print(response.css('a[target="_blank"] ::attr("href")').getall())
-        # print(response.css('li.sc-2-list-item').getall())
-        for drug_class in response.css('a[target="_blank"]'):
-            drug_class_link = drug_class.css('a ::attr("href") ').get()
-            drug_class_id = re.findall("drug-classes/(\S*)/", drug_class_link)[0]
-            drug_class_name = drug_class.css('a ::text').get()
-            # print(drug_class_id, drug_class_name,drug_class_link)
-            yield from response.follow_all(drug_class.css('a ::attr("href") '), self.parse_drug_generic,
-                                           meta={"drug_class_id": drug_class_id, "drug_class_name": drug_class_name})
+        """Parse the drug classes listing page."""
+        # Detect challenge page early
+        if "captcha" in response.url.lower() or "challenge" in response.url.lower():
+            self.logger.warning("Captcha challenge detected at %s — stopping.", response.url)
+            return
 
-    # todo debug this drug class
-    # https://medex.com.bd/drug-classes/618/other-antibiotic
+        self.logger.info("Parsing drug classes listing page")
+        
+        # Extract drug class links
+        drug_class_links = response.css('a[target="_blank"] ::attr("href")').getall()
+        
+        if not drug_class_links:
+            self.logger.warning("No drug class links found on %s", response.url)
+            return
+        
+        self.logger.info(f"Found {len(drug_class_links)} drug class links")
+        
+        # Follow each drug class link
+        for link in drug_class_links:
+            if link and 'drug-classes' in link:
+                # Extract drug class info from the link
+                drug_class_id_match = re.findall("drug-classes/(\S*)/", link)
+                if drug_class_id_match:
+                    drug_class_id = drug_class_id_match[0]
+                    # Get the drug class name from the link text
+                    link_element = response.css(f'a[href="{link}"]')
+                    drug_class_name = link_element.css('::text').get()
+                    
+                    if drug_class_name:
+                        self.logger.info(f"Following drug class: {drug_class_name} (ID: {drug_class_id})")
+                        yield response.follow(
+                            link,
+                            callback=self.parse_drug_class,
+                            headers={"Referer": response.url},
+                            meta={
+                                "playwright": True,
+                                "playwright_context": "default",
+                                "playwright_page_methods": [PageMethod("wait_for_load_state", "networkidle")],
+                                "drug_class_id": drug_class_id,
+                                "drug_class_name": drug_class_name.strip()
+                            }
+                        )
 
-    def generic_id_mapping(self, drug_class, generic_ids):
-        for generic_id in generic_ids:
-            try:
-                generic = Generic.objects.get(generic_id=generic_id)
-                logging.info("generic drug class value inserting")
-                # https://docs.djangoproject.com/en/3.1/ref/models/instances/#specifying-which-fields-to-save
-                generic.drug_class = drug_class
-                generic.save(update_fields=['drug_class'])
-            except Generic.DoesNotExist as ge:
-                logging.info(ge)
-            except IntegrityError as ie:
-                logging.info(ie)
-
-    def parse_drug_generic(self, response):
-        generic_ids = None
+    def parse_drug_class(self, response):
+        """Parse individual drug class page."""
+        # Skip CAPTCHA pages
+        if 'captcha-challenge' in response.url:
+            self.logger.warning("Skipping CAPTCHA page: %s", response.url)
+            return
+        
+        # Get drug class info from meta
+        drug_class_id = response.meta.get('drug_class_id')
+        drug_class_name = response.meta.get('drug_class_name')
+        
+        if not drug_class_id or not drug_class_name:
+            self.logger.warning("Missing drug class info in meta for %s", response.url)
+            return
+        
+        self.logger.info(f"Processing drug class: {drug_class_name} (ID: {drug_class_id})")
+        
+        # Create drug class item
         item = DrugClassItem()
-        item['drug_class_id'] = response.request.meta['drug_class_id']
-        item['drug_class_name'] = response.request.meta['drug_class_name']
-        item['generics_count'] = len(response.css('a.hoverable-block'))
-        item['slug'] = slugify(item['drug_class_name'] + '-' + item['drug_class_id'],
-                               allow_unicode=True)
-
-        try:
-            generic_links = response.css('a.hoverable-block  ::attr(href)').extract()
-            generic_ids = [re.findall("generics/(\S*)/", generic_link)[0] for generic_link in generic_links]
-        except IndexError as ie:
-            logging.info(ie)
-
-        try:
-            drug_class = DrugClass.objects.get(drug_class_id=item["drug_class_id"])
-            # print("Drug Class already exists",str(drug_class.drug_class_name))
-            self.generic_id_mapping(drug_class, generic_ids)
-        except DrugClass.DoesNotExist:
-            drug_class = item.save()
-            # print("Drug Class creating...", str(drug_class.drug_class_name))
-            self.generic_id_mapping(drug_class, generic_ids)
-
+        item['drug_class_id'] = drug_class_id
+        item['drug_class_name'] = drug_class_name
+        
+        # Count generics in this drug class
+        generic_links = response.css('a.hoverable-block ::attr("href")').getall()
+        item['generics_count'] = len(generic_links)
+        
+        # Generate slug
+        item['slug'] = slugify(drug_class_name + '-' + drug_class_id, allow_unicode=True)
+        
+        self.logger.info(f"Successfully extracted drug class: {drug_class_name} with {item['generics_count']} generics")
         yield item

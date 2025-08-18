@@ -1,0 +1,85 @@
+{
+  "cookies": [
+    {
+      "name": "__m_cache_uf",
+      "value": "MjMzNzE2OTM4Mw==",
+      "domain": "medex.com.bd",
+      "path": "/",
+      "expires": -1,
+      "httpOnly": false,
+      "secure": true,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "__m_cache_uis",
+      "value": "72654765126032057392",
+      "domain": "medex.com.bd",
+      "path": "/",
+      "expires": 1789928965.634,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "__m_cache_uis_cc",
+      "value": "2",
+      "domain": "medex.com.bd",
+      "path": "/",
+      "expires": 1755381639.000,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "__m_cache_uis_cdt",
+      "value": "1755378640",
+      "domain": "medex.com.bd",
+      "path": "/",
+      "expires": -1,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "_ga",
+      "value": "GA1.1.1060464867.1755364167",
+      "domain": ".medex.com.bd",
+      "path": "/",
+      "expires": 1789928966.840,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "_ga_V6XE762ZG5",
+      "value": "GS2.1.s1755368161$o2$g1$t1755381268$j49$l0$h0",
+      "domain": ".medex.com.bd",
+      "path": "/",
+      "expires": 1789944868.309,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "medex_session",
+      "value": "eyJpdiI6Ii9GZnd4V1dkN3lzQ2VsbXZGRkhaR3c9PSIsInZhbHVlIjoiQThvMUpTVkkrUmsxNDkvTFlIVEd5QlZleXdCam5DNC9oRHVmR1Rnb3pyeWp2eXBkbzdBZDBydkk3R2VBdEZEcEJ4cGloUWZDczZPaTkzQTdvS1VEUGZJblBia1JUdkFYUkRzbGh2MGhvUHorVDNUWlg0V3MxdlN2TmhXNS90dEQiLCJtYWMiOiIyZDllZDRjMjIzZmQ1MzJmMzA1OTU1NThiNzRmYTI3NGU3ZmU0NWY3NzcxY2E3MzcwZTYzMTgwOTc1MjAyODQ4In0%3D",
+      "domain": "medex.com.bd",
+      "path": "/",
+      "expires": 1755384868.635,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "XSRF-TOKEN",
+      "value": "eyJpdiI6IjgrWjVhdGwvd1hkNnpZbEtOdnVsRnc9PSIsInZhbHVlIjoiNTIvaUVhaWRCOE9oK3FsY1QzVnViWHM1VEFZNlNNenpsZ2JIZTA0bVp0akNYcTRHMUczTCticGNWYkZtNG1kbm5EdWNkM2luYWcwN2xHTjgzSC9kV3BFa1ZmeGZQVEJMRFBaMVVJTVFNK2tKVGh5WHNEZUtWMHY5R1dFM1lIWjUiLCJtYWMiOiJkMzhhMzllMjkxNDhiNjM1NDNhZTNiNDU5MWI1NTA1NmZlMjU4MzNjMDVlMWJiNmU2MDc4YTIzNmMyMmFkYmY4In0%3D",
+      "domain": "medex.com.bd",
+      "path": "/",
+      "expires": 1755384868.635,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    }
+  ],
+  "origins": []
+}

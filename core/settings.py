@@ -29,27 +29,24 @@ DEBUG = os.environ.get('DEBUG')
 
 ALLOWED_HOSTS = []
 
-# custom application
-CUSTOM_APPS = ['crawler',
-               'medexbot',
-               'api', ]
-
-PACKAGES = ['rest_framework',
-            'rest_framework.authtoken',
-            'django_filters',
-            'admin_auto_filters',  # https://github.com/farhan0581/django-admin-autocomplete-filter
-            ]
-
 # Application definition
-
 INSTALLED_APPS = [
-                     'django.contrib.admin',
-                     'django.contrib.auth',
-                     'django.contrib.contenttypes',
-                     'django.contrib.sessions',
-                     'django.contrib.messages',
-                     'django.contrib.staticfiles',
-                 ] + CUSTOM_APPS + PACKAGES
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    # Project apps
+    'crawler',
+    'medexbot',
+    'api',
+    # Third party apps
+    'rest_framework',
+    'rest_framework.authtoken',
+    'django_filters',
+    'admin_auto_filters',
+]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -81,45 +78,25 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'core.wsgi.application'
 
-# Database
-# https://docs.djangoproject.com/en/3.1/ref/settings/#databases
-
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
-
+# Database configuration
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': str(os.environ.get('DB_NAME')),
-        'USER': str(os.environ.get('DB_USERNAME')),
-        'PASSWORD': str(os.environ.get('DB_PASSWORD')),
-        'HOST': str(os.environ.get('DB_HOST')),
-        'PORT': str(os.environ.get('DB_PORT')),
+        'NAME': os.environ.get('DB_NAME'),
+        'USER': os.environ.get('DB_USERNAME'),
+        'PASSWORD': os.environ.get('DB_PASSWORD'),
+        'HOST': os.environ.get('DB_HOST', 'localhost'),
+        'PORT': os.environ.get('DB_PORT', '5432'),
     }
 }
-
-if os.environ.get('GITHUB_WORKFLOW'):
-    DATABASES = {
-        'default': {
-           'ENGINE': 'django.db.backends.postgresql',
-           'NAME': 'github_actions',
-           'USER': 'postgres',
-           'PASSWORD': 'postgres',
-           'HOST': '127.0.0.1',
-           'PORT': '5432',
-        }
-    }
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-DATA_UPLOAD_MAX_NUMBER_FIELDS = 30720  # higher than the count of fields
+# Increase max fields for bulk operations
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 30720
 
 # Password validation
 # https://docs.djangoproject.com/en/3.1/ref/settings/#auth-password-validators
@@ -157,21 +134,12 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-# DATA_UPLOAD_MAX_NUMBER_FIELDS = 20240 # higher than the count of fields
-
-# REST_FRAMEWORK = {
-#     'DEFAULT_PERMISSION_CLASSES': [
-#         'rest_framework.permissions.jangoModelPermissionsOrAnonReadOnly'
-#     ]
-# }
-
+# REST Framework configuration
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.BasicAuthentication',
         'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
     ],
-    # 'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
-    'TEST_REQUEST_DEFAULT_FORMAT': 'json',
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'PAGE_SIZE': 10,
 }

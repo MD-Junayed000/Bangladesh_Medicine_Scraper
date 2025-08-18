@@ -1,106 +1,99 @@
 # Scrapy settings for medexbot project
-#
-# For simplicity, this file contains only settings considered important or
-# commonly used. You can find more settings consulting the documentation:
-#
-#     https://docs.scrapy.org/en/latest/topics/settings.html
-#     https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
-#     https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# todo scrapy django integration exploring new techniques
-# https://github.com/bipul21/scrapy_django
+BOT_NAME = "medexbot"
+SPIDER_MODULES = ["medexbot.spiders"]
+NEWSPIDER_MODULE = "medexbot.spiders"
 
-# adding  https://github.com/scrapy-plugins/scrapy-djangoitem
+# Browser settings
+USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/124.0.0.0 Safari/537.36"
+)
 
-BOT_NAME = 'medexbot'
+DEFAULT_REQUEST_HEADERS = {
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9",
+}
 
-SPIDER_MODULES = ['medexbot.spiders']
-NEWSPIDER_MODULE = 'medexbot.spiders'
+# Basic settings
+ROBOTSTXT_OBEY = True
+COOKIES_ENABLED = True
+REQUEST_FINGERPRINTER_IMPLEMENTATION = "2.7"
 
+# Polite crawling
+DOWNLOAD_DELAY = 1.0
+RANDOMIZE_DOWNLOAD_DELAY = True
+CONCURRENT_REQUESTS = 4
 
-# Proxy setup
+AUTOTHROTTLE_ENABLED = True
+AUTOTHROTTLE_START_DELAY = 1.0
+AUTOTHROTTLE_MAX_DELAY = 10.0
 
+# Proxy setup (optional)
 PROXY_HOST = os.environ.get("PROXY_HOST")
 PROXY_PORT = os.environ.get("PROXY_PORT")
 PROXY_USER = os.environ.get("PROXY_USER")
 PROXY_PASSWORD = os.environ.get("PROXY_PASSWORD")
 
-
-# Crawl responsibly by identifying yourself (and your website) on the user-agent
-USER_AGENT = 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.1 (KHTML, like Gecko) Chrome/22.0.1207.1 Safari/537.1'
-
-# Obey robots.txt rules
-ROBOTSTXT_OBEY = True
-
-# Configure maximum concurrent requests performed by Scrapy (default: 16)
-# CONCURRENT_REQUESTS = 32
-
-# Configure a delay for requests for the same website (default: 0)
-# See https://docs.scrapy.org/en/latest/topics/settings.html#download-delay
-# See also autothrottle settings and docs
-DOWNLOAD_DELAY = 0.25
-# The download delay setting will honor only one of:
-# CONCURRENT_REQUESTS_PER_DOMAIN = 16
-# CONCURRENT_REQUESTS_PER_IP = 16
-
-# Disable cookies (enabled by default)
-COOKIES_ENABLED = False
-
-# Disable Telnet Console (enabled by default)
-TELNETCONSOLE_ENABLED = False
-
-# Override the default request headers:
-# DEFAULT_REQUEST_HEADERS = {
-#   'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-#   'Accept-Language': 'en',
-# }
-
-# Enable or disable spider middlewares
-# See https://docs.scrapy.org/en/latest/topics/spider-middleware.html
-# SPIDER_MIDDLEWARES = {
-#    'medexbot.middlewares.MedexbotSpiderMiddleware': 543,
-# }
-
-# Enable or disable downloader middlewares
-# See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
+# Middlewares and pipelines
 DOWNLOADER_MIDDLEWARES = {
-   # 'medexbot.middlewares.MedexbotDownloaderMiddleware': 543,
-    'medexbot.proxy_middlewares.ProxyMiddleware': 350,
+    "medexbot.proxy_middlewares.ProxyMiddleware": 350,
 }
 
-# Enable or disable extensions
-# See https://docs.scrapy.org/en/latest/topics/extensions.html
-# EXTENSIONS = {
-#    'scrapy.extensions.telnet.TelnetConsole': None,
-# }
-
-# Configure item pipelines
-# See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-    'medexbot.pipelines.MedexbotPipeline': 300,
+    "medexbot.pipelines.MedexbotPipeline": 300,
 }
 
-# Enable and configure the AutoThrottle extension (disabled by default)
-# See https://docs.scrapy.org/en/latest/topics/autothrottle.html
-# AUTOTHROTTLE_ENABLED = True
-# The initial download delay
-# AUTOTHROTTLE_START_DELAY = 5
-# The maximum download delay to be set in case of high latencies
-# AUTOTHROTTLE_MAX_DELAY = 60
-# The average number of requests Scrapy should be sending in parallel to
-# each remote server
-# AUTOTHROTTLE_TARGET_CONCURRENCY = 1.0
-# Enable showing throttling stats for every response received:
-# AUTOTHROTTLE_DEBUG = False
+# Optional Playwright integration (enabled for this project)
+ENABLE_PLAYWRIGHT = True  # Required for medex.com.bd scraping
 
-# Enable and configure HTTP caching (disabled by default)
-# See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html#httpcache-middleware-settings
-# HTTPCACHE_ENABLED = True
-# HTTPCACHE_EXPIRATION_SECS = 0
-# HTTPCACHE_DIR = 'httpcache'
-# HTTPCACHE_IGNORE_HTTP_CODES = []
-# HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
+if ENABLE_PLAYWRIGHT:
+    try:
+        import scrapy_playwright
+        TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
+        DOWNLOAD_HANDLERS = {
+            "http": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler", 
+            "https": "scrapy_playwright.handler.ScrapyPlaywrightDownloadHandler",
+        }
+        PLAYWRIGHT_BROWSER_TYPE = "chromium"
+        PLAYWRIGHT_LAUNCH_OPTIONS = {
+            "headless": False,  # Use visible browser instead of headless
+            "channel": "chrome",  # Use Chrome instead of Chromium
+            "args": [
+                "--no-sandbox",
+                "--disable-dev-shm-usage",
+                "--disable-web-security",
+                "--disable-blink-features=AutomationControlled",
+                "--disable-features=VizDisplayCompositor",
+            ]
+        }
+        PLAYWRIGHT_CONTEXTS = {
+            "default": {
+                "storage_state": "playwright_state.json",
+                "user_agent": USER_AGENT,
+                "locale": "en-US",
+                "viewport": {"width": 1366, "height": 768},
+                "extra_http_headers": {
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                    "Accept-Language": "en-US,en;q=0.9",
+                    "Accept-Encoding": "gzip, deflate",
+                    "Connection": "keep-alive",
+                    "Upgrade-Insecure-Requests": "1",
+                },
+                "java_script_enabled": True,
+                "accept_downloads": False,
+                "ignore_https_errors": False,
+            }
+        }
+        
+        # Playwright specific settings for better CAPTCHA handling
+        PLAYWRIGHT_DEFAULT_NAVIGATION_TIMEOUT = 30000  # 30 seconds
+    except ImportError:
+        pass
+
+LOG_LEVEL = "INFO"

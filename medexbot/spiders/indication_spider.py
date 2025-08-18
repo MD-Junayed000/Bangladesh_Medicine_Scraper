@@ -1,7 +1,10 @@
+# medexbot/spiders/indication_spider.py
+import os
 import logging
 import re
 
-import scrapy
+from scrapy import Spider, Request
+from scrapy_playwright.page import PageMethod
 from django.db import IntegrityError
 from django.utils.text import slugify
 
@@ -9,66 +12,101 @@ from crawler.models import Generic, Indication
 from medexbot.items import IndicationItem
 
 
-class IndicationSpider(scrapy.Spider):
+class IndicationSpider(Spider):
     name = "indication"
-    allowed_domains = ['medex.com.bd']
-    start_urls = ['https://medex.com.bd/indications?page=1']
+    allowed_domains = ["medex.com.bd"]
+    start_urls = ["https://medex.com.bd/indications?page=1"]
+
+    def _pw_meta(self, extra=None, tag="list"):
+        os.makedirs("debug", exist_ok=True)
+        methods = [
+            # give CF some time, then wait for the real list
+            PageMethod("wait_for_load_state", "networkidle"),
+            PageMethod("wait_for_selector", "div.data-row", timeout=120000),
+            # drop a screenshot per page for troubleshooting
+            PageMethod("screenshot", path=f"debug/{tag}.png", full_page=True),
+        ]
+        meta = {
+            "playwright": True,
+            # IMPORTANT: use the *persistent* context
+            "playwright_context": "human",
+            "playwright_page_methods": methods,
+        }
+        if extra:
+            meta.update(extra)
+        return meta
+
+    def start_requests(self):
+        yield Request(self.start_urls[0], meta=self._pw_meta(tag="indications-page1"))
 
     def parse(self, response, **kwargs):
-        for indication_info in response.css('div.data-row'):
-            indication_link = indication_info.css('div.data-row-top a ::attr(href)').get()
-            indication_id = re.findall("indications/(\S*)/", indication_link)[0]
+        rows = response.css("div.data-row")
+        if not rows:
+            # We didn’t get the list. Save the HTML we actually got.
+            with open("debug/indications-page1.html", "wb") as f:
+                f.write(response.body)
+            self.logger.warning("No data rows on %s (saved debug/indications-page1.html)", response.url)
+            return  # stop here; you can open the file to see if it’s the challenge
 
-            indication_name = indication_info.css('div.data-row-top a ::text').get()
+        for row in rows:
+            link = row.css("div.data-row-top a::attr(href)").get()
+            if not link:
+                continue
+            indication_id = re.findall(r"indications/(\S*)/", link)[0]
+            indication_name = row.css("div.data-row-top a::text").get()
+            nums = row.css("div.col-xs-12 ::text").re(r"(\d+)")
+            generics_count = 0 if not nums else nums[0]
 
-            brand_names_counter = indication_info.css('div.col-xs-12 ::text').re(r"(\d+)")
-            generics_count = 0 if len(brand_names_counter) == 0 else brand_names_counter[0]
+            yield response.follow(
+                link,
+                callback=self.parse_indication,
+                meta=self._pw_meta(
+                    {
+                        "indication_id": indication_id,
+                        "indication_name": indication_name,
+                        "generics_count": generics_count,
+                    },
+                    tag=f"indication-{indication_id}",
+                ),
+            )
 
-            yield from response.follow_all(indication_info.css('div.data-row-top a ::attr(href)'),
-                                           self.parse_indication,
-                                           meta={"indication_id": indication_id, "indication_name": indication_name,
-                                                 "generics_count": generics_count})
-
-        pagination_links = response.css('a.page-link[rel="next"]  ::attr("href") ')
-        yield from response.follow_all(pagination_links, self.parse)
+        # pagination
+        for href in response.css('a.page-link[rel="next"]::attr(href)').getall():
+            yield response.follow(href, callback=self.parse, meta=self._pw_meta(tag="indications-next"))
 
     def generic_id_mapping(self, indication, generic_ids):
-        # populating indication field in Generic Model
-        for generic_id in generic_ids:
+        for gid in generic_ids or []:
             try:
-                generic = Generic.objects.get(generic_id=generic_id)
-                logging.info("generic indication value inserting...")
-                # https://docs.djangoproject.com/en/3.1/ref/models/instances/#specifying-which-fields-to-save
+                generic = Generic.objects.get(generic_id=gid)
+                logging.info("Setting indication on generic %s", gid)
                 generic.indication = indication
-                generic.save(update_fields=['indication'])
+                generic.save(update_fields=["indication"])
             except Generic.DoesNotExist as ge:
                 logging.info(ge)
             except IntegrityError as ie:
                 logging.info(ie)
 
     def parse_indication(self, response):
-        generic_ids = None
-
         item = IndicationItem()
-        item['indication_id'] = response.request.meta['indication_id']
-        item['indication_name'] = response.request.meta['indication_name']
-        item['generics_count'] = response.request.meta['generics_count']
-        item['slug'] = slugify(item['indication_name'] + '-' + item['indication_id'],
-                               allow_unicode=True)
+        item["indication_id"] = response.meta["indication_id"]
+        item["indication_name"] = response.meta["indication_name"]
+        item["generics_count"] = response.meta["generics_count"]
+        item["slug"] = slugify(f"{item['indication_name']}-{item['indication_id']}", allow_unicode=True)
 
+        generic_ids = []
         try:
-            generic_links = response.css('div.data-row-top a ::attr(href)').extract()
-            generic_ids = [re.findall("generics/(\S*)/", generic_link)[0] for generic_link in generic_links]
+            links = response.css("div.data-row-top a::attr(href)").getall()
+            generic_ids = [re.findall(r"generics/(\S*)/", u)[0] for u in links]
         except IndexError as ie:
             logging.info(ie)
 
         try:
             indication = Indication.objects.get(indication_id=item["indication_id"])
-            print("Indication instance already exists",str(indication.indication_name))
+            print("Indication exists", str(indication.indication_name))
             self.generic_id_mapping(indication, generic_ids)
         except Indication.DoesNotExist:
             indication = item.save()
-            print("Indication instance creating...", str(indication.indication_name))
+            print("Created indication", str(indication.indication_name))
             self.generic_id_mapping(indication, generic_ids)
 
         yield item
