@@ -155,7 +155,7 @@ python save_state_from_chrome.py
 # This will:
 # 1. Open medex.com.bd in Chrome
 # 2. Allow you to solve any CAPTCHA manually
-# 3. Extract cookies and save to ***playwright_state.json***
+# 3. Extract cookies and save to ***playwright_state.json*** / update the existing one as previous sessions was given
 ```
 <img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/d1ad1def-d284-4932-a08f-33098e429545" />
 
