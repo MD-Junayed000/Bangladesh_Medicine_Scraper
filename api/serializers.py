@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from crawler.models import Medicine, Generic, DrugClass, DosageForm, Indication, Manufacturer
+from crawler.models import Medicine, Generic, DrugClass, Manufacturer
 
 
 class MedicineSerializer(serializers.ModelSerializer):
@@ -26,18 +26,10 @@ class DrugClassSerializer(serializers.ModelSerializer):
         exclude = ('created', 'updated')
 
 
-class IndicationSerializer(serializers.ModelSerializer):
-    generics = GenericSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = Indication
-        exclude = ('created', 'updated')
+# Indication removed
 
 
-class DosageFormSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = DosageForm
-        exclude = ('created', 'updated')
+# DosageForm removed
 
 
 class ManufacturerSerializer(serializers.ModelSerializer):

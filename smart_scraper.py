@@ -117,8 +117,7 @@ class SmartScraper:
             f"{self.base_url}/medicines",
             f"{self.base_url}/medicines?page=1",
             f"{self.base_url}/drug-classes",
-            f"{self.base_url}/indications",
-            f"{self.base_url}/dosage-forms",
+         
         ]
         
         results = {}

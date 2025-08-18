@@ -7,7 +7,7 @@ from admin_auto_filters.filters import AutocompleteFilter
 
 from django.http import HttpResponse
 
-from crawler.models import Medicine, Generic, Manufacturer, DosageForm, Indication, DrugClass
+from crawler.models import Medicine, Generic, Manufacturer, DrugClass
 
 
 # change selection list count
@@ -108,7 +108,7 @@ class GenericAdmin(admin.ModelAdmin):
     list_filter = ('created', 'descriptions_count', AlphabetFilter)
     search_fields = ('generic_name', 'monograph_link')
     prepopulated_fields = {'slug': ('generic_name',)}
-    raw_id_fields = ('drug_class', 'indication')
+    raw_id_fields = ('drug_class',)
     date_hierarchy = 'created'
     ordering = ('created',)
     actions = [export_to_csv]
@@ -127,27 +127,6 @@ class ManufacturerAdmin(admin.ModelAdmin):
     inlines = [MedicineItemInline]
 
 
-@admin.register(DosageForm)
-class DosageFormAdmin(admin.ModelAdmin):
-    list_display = ('dosage_form_id', 'dosage_form_name', 'brand_names_count')
-    list_filter = ('created', AlphabetFilter,)
-    search_fields = ('dosage_form_name',)
-    prepopulated_fields = {'slug': ('dosage_form_name',)}
-    date_hierarchy = 'created'
-    ordering = ('created',)
-    actions = [export_to_csv]
-
-
-@admin.register(Indication)
-class IndicationAdmin(admin.ModelAdmin):
-    list_display = ('indication_id', 'indication_name', 'generics_count')
-    list_filter = ('created', AlphabetFilter,)
-    search_fields = ('indication_name',)
-    prepopulated_fields = {'slug': ('indication_name',)}
-    date_hierarchy = 'created'
-    ordering = ('created',)
-    actions = [export_to_csv]
-    inlines = [GenericItemInline]
 
 
 @admin.register(DrugClass)
@@ -161,12 +140,9 @@ class DrugClassAdmin(admin.ModelAdmin):
     actions = [export_to_csv]
 
 # --- Hide specific models from admin sidebar without touching database ---
-try:
-    admin.site.unregister(DosageForm)
-except admin.sites.NotRegistered:
-    pass
-
-try:
-    admin.site.unregister(Indication)
-except admin.sites.NotRegistered:
-    pass
+# Already hidden earlier if registered
+for mdl in ('DosageForm', 'Indication'):
+    try:
+        admin.site.unregister(globals().get(mdl))
+    except Exception:
+        pass

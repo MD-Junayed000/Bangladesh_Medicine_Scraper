@@ -7,8 +7,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 import crawler
-from crawler.models import Medicine, Generic, Manufacturer, DrugClass, Indication, DosageForm
-
+from crawler.models import Medicine, Generic, Manufacturer, DrugClass
 
 # Tests for the Medicine model
 class MedicineTestCase(TestCase):
@@ -75,30 +74,7 @@ class MedicineTestCase(TestCase):
                                     pack_size_info='Test Package Size',
                                     )
 
-    def test_dosage_form_content(self):
-        dosage_form = DosageForm.objects.get(dosage_form_name='Test Dosage Form')
-        self.assertEqual(dosage_form.dosage_form_name, 'Test Dosage Form')
-        self.assertEqual(dosage_form.slug, 'test-dosage-form')
-        self.assertEqual(dosage_form.brand_names_count, 10)
-        self.assertEqual(dosage_form.created, self.mocked)
-        self.assertEqual(dosage_form.updated, self.mocked)
-
-        # other option #1
-        # def test_dosage_form_content(self):
-        #     mocked = datetime.datetime.now(tz=pytz.utc)
-        #     with mock.patch('django.utils.timezone.now', mock.Mock(return_value=mocked)):
-        #         dosage_form = DosageForm.objects.create(dosage_form_name='Test Dosage Form',
-        #                                                 slug='test-dosage-form',
-        #                                                 brand_names_count=10, )
-        #         self.assertEqual(dosage_form.created, mocked)
-
-        # other option #2
-        # @mock.patch('django.utils.timezone.now', lambda: datetime.datetime.now(tz=pytz.utc))
-        # def test_dosage_form_content(self):
-        #     dosage_form = DosageForm.objects.create(dosage_form_name='Test Dosage Form',
-        #                               slug='test-dosage-form',
-        #                               brand_names_count=10, )
-        #     self.assertEqual(dosage_form.created, mock.ANY)
+  
 
     def test_drug_class_content(self):
         drug_class = DrugClass.objects.get(drug_class_name='Test Drug Class')
@@ -109,14 +85,6 @@ class MedicineTestCase(TestCase):
         self.assertEqual(drug_class.created, self.mocked)
         self.assertEqual(drug_class.updated, self.mocked)
 
-    def test_indication_content(self):
-        indication = Indication.objects.get(indication_name='Test Indication')
-        self.assertEqual(indication.indication_name, 'Test Indication')
-        self.assertEqual(str(indication), 'Test Indication')
-        self.assertEqual(indication.slug, 'test-indication')
-        self.assertEqual(indication.generics_count, 10)
-        self.assertEqual(indication.created, self.mocked)
-        self.assertEqual(indication.updated, self.mocked)
 
     def test_generic_content(self):
         generic = Generic.objects.get(generic_name='Test Generic')

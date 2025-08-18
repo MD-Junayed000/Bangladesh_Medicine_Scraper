@@ -2,7 +2,7 @@
 
 A web scraping project that extracts pharmaceutical data from [medex.com.bd](https://medex.com.bd) using **Scrapy + Playwright** with **Chrome session management**. This project successfully bypasses CAPTCHA challenges and extracts comprehensive medicine data.
 
-<img width="1899" height="1078" alt="image" src="https://github.com/user-attachments/assets/ba72170f-8958-4bae-a2cc-ff9f6570e80f" />
+<img  width="1899" height="1078" alt="image" src="picture/cover.png" />
 
 
 
@@ -114,7 +114,7 @@ python manage.py runserver
 
 # Expected output:
 ```
-<img width="1919" height="338" alt="image" src="https://github.com/user-attachments/assets/9abc0e0f-8c71-4f60-a151-be397a8ba6af" />
+<img width="1919" height="338" alt="image" src="picture/one.png" />
 
 
 ```bash
@@ -129,7 +129,7 @@ python manage.py runserver
 # Open http://127.0.0.1:8000/admin/ in your browser
 # Login with your Django superuser account
 ```
-<img width="1919" height="699" alt="image" src="https://github.com/user-attachments/assets/d5dd1339-04d6-40cb-bafa-1ef1720f98ef" />
+<img width="1919" height="699" alt="image" src="picture/three.png" />
 
 
 ```bash
@@ -157,7 +157,7 @@ python save_state_from_chrome.py
 # 2. Allow you to solve any CAPTCHA manually
 # 3. Extract cookies and save to ***playwright_state.json*** / update the existing one as previous sessions was given
 ```
-<img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/d1ad1def-d284-4932-a08f-33098e429545" />
+<img width="1919" height="1079" alt="image" src="picture/four.png" />
 
 
 
@@ -177,9 +177,9 @@ python run_scrapy_with_playwright.py drug_class
 ```bash
 # When spiders crawl over each page, the Database will fill up eventually for the specifically mentioned table:
 ```
-<img width="1893" height="850" alt="image" src="https://github.com/user-attachments/assets/be9abcc5-0293-4961-82e7-910ba0252cde" />
+<img width="1893" height="850" alt="image" src="picture/five.png" />
 
-<img width="1897" height="980" alt="image" src="https://github.com/user-attachments/assets/6b99a622-1edd-4256-a075-d7e9c0cc8ea6" />
+<img width="1897" height="980" alt="image" src="picture/six.png" />
 
 
 

@@ -2,23 +2,6 @@ from django.db import models
 
 
 # Create your models here.
-class DosageForm(models.Model):
-    dosage_form_id = models.IntegerField(blank=False, null=True, unique=True)
-    dosage_form_name = models.CharField(max_length=255, blank=False, null=False)
-    slug = models.SlugField(max_length=250, unique_for_date='created')
-    brand_names_count = models.IntegerField(null=True, blank=True)
-
-    created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = ('dosage_form_name',)
-        verbose_name = "dosage form"
-        verbose_name_plural = 'dosage forms'
-
-    def __str__(self):
-        return self.dosage_form_name
-
 
 class DrugClass(models.Model):
     drug_class_id = models.IntegerField(blank=False, null=True, unique=True)
@@ -38,22 +21,6 @@ class DrugClass(models.Model):
         return self.drug_class_name
 
 
-class Indication(models.Model):
-    indication_id = models.IntegerField(blank=False, null=True, unique=True)
-    indication_name = models.CharField(max_length=255, blank=False, null=False)
-    slug = models.SlugField(max_length=250, unique_for_date='created')
-    generics_count = models.IntegerField(null=True, blank=True)
-
-    created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = ('indication_name',)
-        verbose_name = "indication"
-        verbose_name_plural = 'indications'
-
-    def __str__(self):
-        return self.indication_name
 
 
 class Generic(models.Model):
@@ -63,8 +30,6 @@ class Generic(models.Model):
     monograph_link = models.TextField(null=True, blank=True)
 
     drug_class = models.ForeignKey(DrugClass, on_delete=models.CASCADE, related_name='generics', null=True)
-
-    indication = models.ForeignKey(Indication, on_delete=models.CASCADE, related_name='generics', null=True)
 
     indication_description = models.TextField(null=True, blank=True)
     therapeutic_class_description = models.TextField(null=True, blank=True)

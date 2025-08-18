@@ -3,8 +3,8 @@ import os
 import django
 from django.db import transaction
 from asgiref.sync import sync_to_async
-from crawler.models import Medicine, Generic, Manufacturer, DosageForm, Indication, DrugClass
-from medexbot.items import MedItem, GenericItem, ManufacturerItem, DosageFormItem, IndicationItem, DrugClassItem
+from crawler.models import Medicine, Generic, Manufacturer, DrugClass
+from medexbot.items import MedItem, GenericItem, ManufacturerItem, DrugClassItem
 from pathlib import Path
 
 # Ensure Django is set up
@@ -33,8 +33,6 @@ class MedexbotPipeline:
             MedItem: self._save_medicine,
             GenericItem: self._save_generic,
             ManufacturerItem: self._save_manufacturer,
-            DosageFormItem: self._save_dosage_form,
-            IndicationItem: self._save_indication,
             DrugClassItem: self._save_drug_class,
         }
 
@@ -182,26 +180,13 @@ class MedexbotPipeline:
                         item['drug_class'] = dc
                 except Exception as exc:
                     logging.warning(f"DrugClass lookup failed for {dc_id}: {exc}")
-            ind_id = item.get('indication_id_hint')
-            if ind_id and not item.get('indication'):
-                try:
-                    ind = Indication.objects.filter(indication_id=ind_id).first()
-                    if ind:
-                        item['indication'] = ind
-                except Exception as exc:
-                    logging.warning(f"Indication lookup failed for {ind_id}: {exc}")
+            # indication removed from codebase
         except Exception:
             pass
         return self._save_if_not_exists(Generic, "generic_id", item, spider)
 
     def _save_manufacturer(self, item, spider):
         return self._save_if_not_exists(Manufacturer, "manufacturer_id", item, spider)
-
-    def _save_dosage_form(self, item, spider):
-        return self._save_if_not_exists(DosageForm, "dosage_form_id", item, spider)
-
-    def _save_indication(self, item, spider):
-        return self._save_if_not_exists(Indication, "indication_id", item, spider)
 
     def _save_drug_class(self, item, spider):
         return self._save_if_not_exists(DrugClass, "drug_class_id", item, spider)

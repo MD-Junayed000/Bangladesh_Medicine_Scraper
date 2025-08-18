@@ -3,9 +3,8 @@ from rest_framework import generics, permissions
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.pagination import PageNumberPagination
 
-from crawler.models import Medicine, DrugClass, Generic, Indication, DosageForm, Manufacturer
-from .serializers import MedicineSerializer, DrugClassSerializer, GenericSerializer, IndicationSerializer, \
-    DosageFormSerializer, ManufacturerSerializer
+from crawler.models import Medicine, DrugClass, Generic, Manufacturer
+from .serializers import MedicineSerializer, DrugClassSerializer, GenericSerializer, ManufacturerSerializer
 
 
 # Create your views here.
@@ -77,35 +76,3 @@ class DrugClassDetailView(generics.RetrieveAPIView):
     serializer_class = DrugClassSerializer
 
 
-class IndicationListView(generics.ListAPIView):
-    permission_classes = [permissions.IsAuthenticated, ]
-    queryset = Indication.objects.all()
-    serializer_class = IndicationSerializer
-    pagination_class = PageNumberPagination
-
-    filter_backends = (filters.DjangoFilterBackend, SearchFilter, OrderingFilter)
-
-    search_fields = ['indication_name']
-
-
-class IndicationDetailView(generics.RetrieveAPIView):
-    permission_classes = [permissions.IsAuthenticated, ]
-    queryset = Indication.objects.all()
-    serializer_class = IndicationSerializer
-
-
-class DosageFormListView(generics.ListAPIView):
-    permission_classes = [permissions.IsAuthenticated, ]
-    queryset = DosageForm.objects.all()
-    serializer_class = DosageFormSerializer
-    pagination_class = PageNumberPagination
-
-    filter_backends = (filters.DjangoFilterBackend, SearchFilter, OrderingFilter)
-
-    search_fields = ['dosage_form_name']
-
-
-class DosageFormDetailView(generics.RetrieveAPIView):
-    permission_classes = [permissions.IsAuthenticated, ]
-    queryset = DosageForm.objects.all()
-    serializer_class = DosageFormSerializer

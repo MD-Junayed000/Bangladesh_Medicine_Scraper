@@ -161,8 +161,6 @@ def run_spider(spider_name):
         'med': 'medexbot.spiders.med_spider.MedSpider',
         'medicine': 'medexbot.spiders.med_spider.MedSpider',  # Alias
         'drug_class': 'medexbot.spiders.drug_class_spider.DrugClassSpider',
-        'dosage_form': 'medexbot.spiders.dosage_form_spider.DosageFormSpider',
-        'indication': 'medexbot.spiders.indication_spider.IndicationSpider',
     }
     
     if spider_name not in spider_map:
@@ -203,7 +201,7 @@ def show_usage():
     print("   python run_scrapy_with_playwright.py <spider_name>")
     print()
     print("🕷️ Available spiders:")
-    spiders = ['manufacturer', 'generic', 'med', 'drug_class', 'dosage_form', 'indication']
+    spiders = ['manufacturer', 'generic', 'med', 'drug_class']
     for spider in spiders:
         print(f"   • {spider}")
     print()

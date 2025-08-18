@@ -43,31 +43,9 @@ def test_pipeline():
             )
             print(f"   ✅ Generic: {generic.generic_name} (ID: {generic.generic_id})")
             
-            # Test 3: Create a test dosage form
-            print("3️⃣ Creating test dosage form...")
-            dosage_form, created = DosageForm.objects.get_or_create(
-                dosage_form_id=99999,  # Use numeric ID
-                defaults={
-                    'dosage_form_name': 'Tablet',
-                    'brand_names_count': 5,
-                    'slug': 'tablet-99999'
-                }
-            )
-            print(f"   ✅ Dosage Form: {dosage_form.dosage_form_name} (ID: {dosage_form.dosage_form_id})")
+        
             
-            # Test 4: Create a test indication
-            print("4️⃣ Creating test indication...")
-            indication, created = Indication.objects.get_or_create(
-                indication_id=99999,  # Use numeric ID
-                defaults={
-                    'indication_name': 'Test Medical Condition',
-                    'generics_count': 3,  # Fixed field name
-                    'slug': 'test-medical-condition-99999'
-                }
-            )
-            print(f"   ✅ Indication: {indication.indication_name} (ID: {indication.indication_id})")
-            
-            # Test 5: Create a test drug class
+            # Test 3: Create a test drug class
             print("5️⃣ Creating test drug class...")
             drug_class, created = DrugClass.objects.get_or_create(
                 drug_class_id=99999,  # Use numeric ID
@@ -79,7 +57,7 @@ def test_pipeline():
             )
             print(f"   ✅ Drug Class: {drug_class.drug_class_name} (ID: {drug_class.drug_class_id})")
             
-            # Test 6: Create a test medicine
+            # Test 4: Create a test medicine
             print("6️⃣ Creating test medicine...")
             medicine, created = Medicine.objects.get_or_create(
                 brand_id=99999,  # Use numeric ID
@@ -101,8 +79,6 @@ def test_pipeline():
             print(f"\n📊 Current Database Counts:")
             print(f"   Manufacturers: {Manufacturer.objects.count()}")
             print(f"   Generics: {Generic.objects.count()}")
-            print(f"   Dosage Forms: {DosageForm.objects.count()}")
-            print(f"   Indications: {Indication.objects.count()}")
             print(f"   Drug Classes: {DrugClass.objects.count()}")
             print(f"   Medicines: {Medicine.objects.count()}")
             
