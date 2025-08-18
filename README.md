@@ -1,18 +1,22 @@
-# 🏥 Bangladesh Medicine Scraper
+#  Bangladesh Medicine Scraper
 
-A powerful web scraping project that extracts pharmaceutical data from [medex.com.bd](https://medex.com.bd) using **Scrapy + Playwright** with **Chrome session management**. This project successfully bypasses CAPTCHA challenges and extracts comprehensive medicine data.
+A web scraping project that extracts pharmaceutical data from [medex.com.bd](https://medex.com.bd) using **Scrapy + Playwright** with **Chrome session management**. This project successfully bypasses CAPTCHA challenges and extracts comprehensive medicine data.
 
-## 🎯 **Project Status: FULLY WORKING!**
+<img width="1899" height="1078" alt="image" src="https://github.com/user-attachments/assets/ba72170f-8958-4bae-a2cc-ff9f6570e80f" />
+
+
+
+##  **Project Status:**
 
 - ✅ **CAPTCHA bypass** - Completely solved using Chrome cookies
 - ✅ **Data extraction** - Successfully scrapes 200+ manufacturers
-- ✅ **Chrome integration** - Uses your existing Chrome session
+- ✅ **Chrome integration** - Uses existing Chrome session
 - ✅ **No new browsers** - No Chromium spawning issues
 - ✅ **Stable scraping** - Reliable data collection
 
-## 🚀 **Complete Setup Guide**
+##  **Complete Setup Guide**
 
-> **💡 Quick Reference for Experienced Users:**
+> **Quick Reference for Experienced Users:**
 > ```bash
 > # 1. Install PostgreSQL and create database
 > # 2. Create .env file with DB credentials
@@ -37,13 +41,14 @@ A powerful web scraping project that extracts pharmaceutical data from [medex.co
 # Connect to PostgreSQL as superuser
 psql -U postgres
 
-# Create database and user (run these commands in psql)
+# Create database and user (run these commands in psql):
+ ``bash
 CREATE DATABASE bd_medicine_scraper;
 CREATE USER medicine_user WITH PASSWORD 'your_secure_password';
 GRANT ALL PRIVILEGES ON DATABASE bd_medicine_scraper TO medicine_user;
 ALTER USER medicine_user CREATEDB;
 \q
-
+ ``
 # Expected output:
 # CREATE DATABASE
 # CREATE ROLE
@@ -108,6 +113,12 @@ python manage.py createsuperuser
 python manage.py runserver
 
 # Expected output:
+```
+<img width="1919" height="338" alt="image" src="https://github.com/user-attachments/assets/9abc0e0f-8c71-4f60-a151-be397a8ba6af" />
+
+
+```bash
+
 # Watching for file changes with StatReloader
 # Performing system checks...
 # System check identified no issues (0 silenced).
@@ -117,9 +128,13 @@ python manage.py runserver
 
 # Open http://127.0.0.1:8000/admin/ in your browser
 # Login with your Django superuser account
+```
+<img width="1919" height="699" alt="image" src="https://github.com/user-attachments/assets/d5dd1339-04d6-40cb-bafa-1ef1720f98ef" />
 
-### 7. **Verify Setup**
+
 ```bash
+### 1. **Verify Setup**
+
 # Check if server is running (should show Django welcome page)
 curl http://127.0.0.1:8000/
 
@@ -140,8 +155,12 @@ python save_state_from_chrome.py
 # This will:
 # 1. Open medex.com.bd in Chrome
 # 2. Allow you to solve any CAPTCHA manually
-# 3. Extract cookies and save to playwright_state.json
+# 3. Extract cookies and save to ***playwright_state.json***
 ```
+<img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/d1ad1def-d284-4932-a08f-33098e429545" />
+
+
+
 
 ### 3. **Run Spiders**
 ```bash
@@ -152,18 +171,17 @@ python run_scrapy_with_playwright.py manufacturer
 python run_scrapy_with_playwright.py generic
 python run_scrapy_with_playwright.py med
 python run_scrapy_with_playwright.py drug_class
-python run_scrapy_with_playwright.py dosage_form
-python run_scrapy_with_playwright.py indication
 ```
 
-### 4. **Start Django Admin**
+### 4. **Expected Output**
 ```bash
-# In a new terminal (keep virtual environment active)
-python manage.py runserver
-
-# Open http://localhost:8000/admin/ in your browser
-# Login with your Django superuser account
+# When spiders crawl over each page, the Database will fill up eventually for the specifically mentioned table:
 ```
+<img width="1893" height="850" alt="image" src="https://github.com/user-attachments/assets/be9abcc5-0293-4961-82e7-910ba0252cde" />
+
+<img width="1897" height="980" alt="image" src="https://github.com/user-attachments/assets/6b99a622-1edd-4256-a075-d7e9c0cc8ea6" />
+
+
 
 ## 🏗️ **Project Structure**
 
@@ -177,7 +195,7 @@ bd-medicine-scraper/
 ├── save_state_from_chrome.py      # Chrome cookie extractor
 ├── smart_scraper.py               # Session validator
 ├── playwright_state.json          # Chrome session state
-└── requirements.txt               # Python dependencies
+└── requirements.txt               # Python dependencies based on python version 3.10.0
 ```
 
 ## 🔧 **Key Features**
@@ -193,8 +211,6 @@ bd-medicine-scraper/
 - **Generics** - Active ingredients
 - **Medicines** - Brand name drugs
 - **Drug Classes** - Therapeutic categories
-- **Dosage Forms** - Tablet, syrup, injection, etc.
-- **Indications** - Medical conditions treated
 
 ### **Scraping Capabilities**
 - **200+ manufacturers** successfully scraped
@@ -205,20 +221,16 @@ bd-medicine-scraper/
   - Package details and pricing
   - Therapeutic classifications
 
-## 📊 **Current Performance**
 
-- **Manufacturer Spider**: 212 companies scraped in ~33 seconds
-- **Success Rate**: 100% (no CAPTCHA challenges)
-- **Data Quality**: High accuracy with proper relationships
-- **Session Stability**: Persistent Chrome authentication
-
-## 🛠️ **Technical Stack**
+## **Technical Stack**
 
 - **Backend**: Django 3.2.12 + Django REST Framework
 - **Scraping**: Scrapy 2.11.2 + Playwright
 - **Browser**: Chrome with session persistence
 - **Database**: PostgreSQL (configured)
 - **Authentication**: Chrome cookies + session state
+- **Data Quality**: High accuracy with proper relationships
+- **Session Stability**: Persistent Chrome authentication
 
 ## 🔍 **Troubleshooting**
 
@@ -272,18 +284,16 @@ The scraper extracts structured data including:
 - Therapeutic classifications and indications
 - Dosage forms and administration methods
 
-## 🤝 **Contributing**
+##  **Contributing**
 
 1. Fork the repository
 2. Create a feature branch
 3. Test your changes thoroughly
 4. Submit a pull request
 
-## 📄 **License**
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🆘 **Support**
+##  **Support**
 
 If you encounter issues:
 1. Check the troubleshooting section above
@@ -293,4 +303,4 @@ If you encounter issues:
 
 ---
 
-**🎉 The CAPTCHA problem is completely solved! Your scraper now works reliably with Chrome session management.**
+**🎉 The CAPTCHA problem is completely solved! Scraper now works reliably with Chrome session management.**
