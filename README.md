@@ -8,11 +8,11 @@ A web scraping project that extracts pharmaceutical data from [medex.com.bd](htt
 
 ##  **Project Status:**
 
-- ✅ **CAPTCHA bypass** - Completely solved using Chrome cookies
-- ✅ **Data extraction** - Successfully scrapes 200+ manufacturers
-- ✅ **Chrome integration** - Uses existing Chrome session
-- ✅ **No new browsers** - No Chromium spawning issues
-- ✅ **Stable scraping** - Reliable data collection
+-  **CAPTCHA bypass** - Completely solved using Chrome cookies
+-  **Data extraction** - Successfully scrapes 200+ manufacturers
+-  **Chrome integration** - Uses existing Chrome session
+-  **No new browsers** - No Chromium spawning issues
+-  **Stable scraping** - Reliable data collection
 
 ##  **Complete Setup Guide**
 
