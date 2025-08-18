@@ -162,7 +162,7 @@ python save_state_from_chrome.py
 
 
 
-### 3. **Run Spiders**
+### 7. **Run Spiders**
 ```bash
 # Run manufacturer spider (recommended first)
 python run_scrapy_with_playwright.py manufacturer
@@ -173,9 +173,9 @@ python run_scrapy_with_playwright.py med
 python run_scrapy_with_playwright.py drug_class
 ```
 
-### 4. **Expected Output**
+### 8. **Expected Output**
 ```bash
-# When spiders crawl over each page, the Database will fill up eventually for the specifically mentioned table:
+# When spiders crawl over each page, the Database will fill up eventually for the specifically mentioned table (export to CSV for own use):
 ```
 <img width="1893" height="850" alt="image" src="picture/five.png" />
 
@@ -198,21 +198,21 @@ bd-medicine-scraper/
 └── requirements.txt               # Python dependencies based on python version 3.10.0
 ```
 
-## 🔧 **Key Features**
+##  **Key Features**
 
-### **Chrome Session Management**
+#### **Chrome Session Management**
 - Uses your existing Chrome browser session
 - Loads cookies from `playwright_state.json`
 - No new Chromium browsers spawned
 - CAPTCHA bypass through authenticated session
 
-### **Data Models**
+#### **Data Models**
 - **Manufacturers** - Pharmaceutical companies
 - **Generics** - Active ingredients
 - **Medicines** - Brand name drugs
 - **Drug Classes** - Therapeutic categories
 
-### **Scraping Capabilities**
+#### **Scraping Capabilities**
 - **200+ manufacturers** successfully scraped
 - **Comprehensive medicine data** including:
   - Brand names and generic names
@@ -232,9 +232,9 @@ bd-medicine-scraper/
 - **Data Quality**: High accuracy with proper relationships
 - **Session Stability**: Persistent Chrome authentication
 
-## 🔍 **Troubleshooting**
+## **Troubleshooting**
 
-### **Session Expired**
+#### **Session Expired**
 ```bash
 # Check if session is still valid
 python smart_scraper.py --validate
@@ -243,13 +243,13 @@ python smart_scraper.py --validate
 python save_state_from_chrome.py
 ```
 
-### **CAPTCHA Appears**
+#### **CAPTCHA Appears**
 1. Open medex.com.bd in Chrome manually
 2. Solve the CAPTCHA
 3. Run `python save_state_from_chrome.py`
 4. Retry your spider
 
-### **Database Issues**
+#### **Database Issues**
 ```bash
 # If you get connection errors:
 # 1. Check if PostgreSQL is running:
@@ -269,7 +269,7 @@ python manage.py flush
 python manage.py migrate
 ```
 
-### **Common Setup Issues**
+#### **Common Setup Issues**
 - **Port 5432 already in use**: Change DB_PORT in .env to 5433 or another free port
 - **Permission denied**: Ensure medicine_user has proper privileges on database
 - **Virtual environment not activated**: Look for (.venv) prefix in terminal prompt
