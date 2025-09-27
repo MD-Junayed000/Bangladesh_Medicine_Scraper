@@ -1,22 +1,21 @@
-#  Bangladesh Medicine Scraper
+# Bangladesh Medicine Scraper
 
 A web scraping project that extracts pharmaceutical data from [medex.com.bd](https://medex.com.bd) using **Scrapy + Playwright** with **Chrome session management**. This project successfully bypasses CAPTCHA challenges and extracts comprehensive medicine data.
 
 <img  width="1899" height="1078" alt="image" src="picture/cover.png" />
 
+## **Project Status:**
 
+- **CAPTCHA bypass** - Completely solved using Chrome cookies
+- **Data extraction** - Successfully scrapes 200+ manufacturers
+- **Chrome integration** - Uses existing Chrome session
+- **No new browsers** - No Chromium spawning issues
+- **Stable scraping** - Reliable data collection
 
-##  **Project Status:**
-
--  **CAPTCHA bypass** - Completely solved using Chrome cookies
--  **Data extraction** - Successfully scrapes 200+ manufacturers
--  **Chrome integration** - Uses existing Chrome session
--  **No new browsers** - No Chromium spawning issues
--  **Stable scraping** - Reliable data collection
-
-##  **Complete Setup Guide**
+## **Complete Setup Guide**
 
 > **Quick Reference for Experienced Users:**
+>
 > ```bash
 > # 1. Install PostgreSQL and create database
 > # 2. Create .env file with DB credentials
@@ -28,6 +27,7 @@ A web scraping project that extracts pharmaceutical data from [medex.com.bd](htt
 > ```
 
 ### 1. **Install PostgreSQL**
+
 ```bash
 # Download and install PostgreSQL from: https://www.postgresql.org/download/
 # Or use package manager:
@@ -37,6 +37,7 @@ A web scraping project that extracts pharmaceutical data from [medex.com.bd](htt
 ```
 
 ### 2. **Setup PostgreSQL Database**
+
 ```bash
 # Connect to PostgreSQL as superuser
 psql -U postgres
@@ -58,11 +59,13 @@ ALTER USER medicine_user CREATEDB;
 ```
 
 ### 3. **Create Environment File**
+
 ```bash
 # Create .env file in project root
 touch .env
 
 # Add database configuration to .env file:
+DB_ENGINE=django.db.backends.postgresql
 DB_NAME=bd_medicine_scraper
 DB_USERNAME=medicine_user
 DB_PASSWORD=your_secure_password
@@ -73,6 +76,7 @@ DEBUG=True
 ```
 
 ### 4. **Setup Python Environment**
+
 ```bash
 # Create virtual environment
 python -m venv .venv
@@ -90,6 +94,7 @@ pip install -r requirements.txt
 ```
 
 ### 5. **Setup Django Database**
+
 ```bash
 # Apply database migrations
 python manage.py makemigrations
@@ -108,14 +113,15 @@ python manage.py createsuperuser
 ```
 
 ### 6. **Run Django Server**
+
 ```bash
 # In a new terminal (keep virtual environment active)
 python manage.py runserver
 
 # Expected output:
 ```
-<img width="1919" height="338" alt="image" src="picture/one.png" />
 
+<img width="1919" height="338" alt="image" src="picture/one.png" />
 
 ```bash
 
@@ -129,8 +135,8 @@ python manage.py runserver
 # Open http://127.0.0.1:8000/admin/ in your browser
 # Login with your Django superuser account
 ```
-<img width="1919" height="699" alt="image" src="picture/three.png" />
 
+<img width="1919" height="699" alt="image" src="picture/three.png" />
 
 ```bash
 ### 1. **Verify Setup**
@@ -145,7 +151,8 @@ curl http://127.0.0.1:8000/admin/
 ```
 
 **🎉 Congratulations! Your Django server is now running successfully at http://127.0.0.1:8000/**
-```
+
+````
 
 ### 2. **Setup Chrome Session**
 ```bash
@@ -156,13 +163,12 @@ python save_state_from_chrome.py
 # 1. Open medex.com.bd in Chrome
 # 2. Allow you to solve any CAPTCHA manually
 # 3. Extract cookies and save to ***playwright_state.json*** / update the existing one as previous sessions was given
-```
+````
+
 <img width="1919" height="1079" alt="image" src="picture/four.png" />
 
-
-
-
 ### 3. **Run Spiders**
+
 ```bash
 # Run manufacturer spider (recommended first)
 python run_scrapy_with_playwright.py manufacturer
@@ -174,16 +180,16 @@ python run_scrapy_with_playwright.py drug_class
 ```
 
 ### 4. **Expected Output**
+
 ```bash
 # When spiders crawl over each page, the Database will fill up eventually for the specifically mentioned table:
 ```
+
 <img width="1893" height="850" alt="image" src="picture/five.png" />
 
 <img width="1897" height="980" alt="image" src="picture/six.png" />
 
-
-
-## 🏗️ **Project Structure**
+## **Project Structure**
 
 ```
 bd-medicine-scraper/
@@ -198,21 +204,32 @@ bd-medicine-scraper/
 └── requirements.txt               # Python dependencies based on python version 3.10.0
 ```
 
-## 🔧 **Key Features**
+## **Overall Architecture**
+
+<img  src="picture/Chart.png" />
+
+**_spider's used:_**
+
+<img  src="picture/Spider.png" />
+
+## **Key Features**
 
 ### **Chrome Session Management**
+
 - Uses your existing Chrome browser session
 - Loads cookies from `playwright_state.json`
 - No new Chromium browsers spawned
 - CAPTCHA bypass through authenticated session
 
 ### **Data Models**
+
 - **Manufacturers** - Pharmaceutical companies
 - **Generics** - Active ingredients
 - **Medicines** - Brand name drugs
 - **Drug Classes** - Therapeutic categories
 
 ### **Scraping Capabilities**
+
 - **200+ manufacturers** successfully scraped
 - **Comprehensive medicine data** including:
   - Brand names and generic names
@@ -220,7 +237,6 @@ bd-medicine-scraper/
   - Manufacturer information
   - Package details and pricing
   - Therapeutic classifications
-
 
 ## **Technical Stack**
 
@@ -235,6 +251,7 @@ bd-medicine-scraper/
 ## 🔍 **Troubleshooting**
 
 ### **Session Expired**
+
 ```bash
 # Check if session is still valid
 python smart_scraper.py --validate
@@ -244,12 +261,14 @@ python save_state_from_chrome.py
 ```
 
 ### **CAPTCHA Appears**
+
 1. Open medex.com.bd in Chrome manually
 2. Solve the CAPTCHA
 3. Run `python save_state_from_chrome.py`
 4. Retry your spider
 
 ### **Database Issues**
+
 ```bash
 # If you get connection errors:
 # 1. Check if PostgreSQL is running:
@@ -270,6 +289,7 @@ python manage.py migrate
 ```
 
 ### **Common Setup Issues**
+
 - **Port 5432 already in use**: Change DB_PORT in .env to 5433 or another free port
 - **Permission denied**: Ensure medicine_user has proper privileges on database
 - **Virtual environment not activated**: Look for (.venv) prefix in terminal prompt
@@ -278,24 +298,24 @@ python manage.py migrate
 ## 📈 **Data Output**
 
 The scraper extracts structured data including:
+
 - Company profiles and contact information
 - Medicine catalogs with detailed specifications
 - Generic drug information and monographs
 - Therapeutic classifications and indications
 - Dosage forms and administration methods
 
-##  **Contributing**
+## **Contributing**
 
 1. Fork the repository
 2. Create a feature branch
 3. Test your changes thoroughly
 4. Submit a pull request
 
-
-
-##  **Support**
+## **Support**
 
 If you encounter issues:
+
 1. Check the troubleshooting section above
 2. Verify your Chrome session is valid
 3. Ensure all dependencies are installed
