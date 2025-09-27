@@ -167,7 +167,7 @@ python save_state_from_chrome.py
 
 <img width="1919" height="1079" alt="image" src="picture/four.png" />
 
-### 3. **Run Spiders**
+### 7. **Run Spiders**
 
 ```bash
 # Run manufacturer spider (recommended first)
@@ -179,10 +179,10 @@ python run_scrapy_with_playwright.py med
 python run_scrapy_with_playwright.py drug_class
 ```
 
-### 4. **Expected Output**
+### 8. **Expected Output**
 
 ```bash
-# When spiders crawl over each page, the Database will fill up eventually for the specifically mentioned table:
+# When spiders crawl over each page, the Database will fill up eventually for the specifically mentioned table (export to CSV for own use):
 ```
 
 <img width="1893" height="850" alt="image" src="picture/five.png" />
@@ -248,7 +248,7 @@ bd-medicine-scraper/
 - **Data Quality**: High accuracy with proper relationships
 - **Session Stability**: Persistent Chrome authentication
 
-## 🔍 **Troubleshooting**
+## **Troubleshooting**
 
 ### **Session Expired**
 
