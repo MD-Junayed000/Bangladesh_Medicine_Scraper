@@ -4,7 +4,7 @@ Scrapes public pharmaceutical catalogue data from [medex.com.bd](https://medex.c
 
 <img width="1899" height="1078" alt="Bangladesh Medicine Scraper cover" src="picture/cover.png" />
 
-## What This Project Does (in 30 seconds)
+## What This Project Does 
 
 - Crawls MedEx listing pages (companies, generics, brands/medicines, drug classes).
 - Uses a real browser session (Playwright + Chrome) and **reuses your cookies** from `playwright_state.json` to reduce anti-bot challenges.
@@ -15,10 +15,6 @@ Scrapes public pharmaceutical catalogue data from [medex.com.bd](https://medex.c
 
 > Privacy note: `playwright_state.json` contains session cookies. Treat it like a password. Use your own local copy and avoid committing real cookies back to git.
 
-## Who This README Is For
-
-- **Absolute beginners**: follow “Quick Start” and read “Concepts” to understand what’s happening.
-- **Developers**: jump to “Internal Deep Dive” to see where Playwright hooks into Scrapy and how data is persisted.
 
 ## Concepts: Scrapy vs Playwright (Basics)
 
@@ -26,9 +22,9 @@ Scrapes public pharmaceutical catalogue data from [medex.com.bd](https://medex.c
 
 Scrapy is a Python framework for building crawlers:
 
-- You write a **spider** that starts from one or more URLs.
+- Write a **spider** that starts from one or more URLs.
 - Scrapy downloads each page and calls your `parse()` functions.
-- Your code extracts data and yields **items** (structured objects).
+- Code extracts data and yields **items** (structured objects).
 - Items go through **pipelines** (e.g., save to database, deduplicate, export).
 
 In this repo, Scrapy is responsible for:
@@ -73,12 +69,12 @@ Bangladesh_Medicine_Scraper/
 ├── run_scrapy_with_playwright.py # Runs spiders with Chrome cookies via Playwright
 ├── save_state_from_chrome.py     # Creates/updates playwright_state.json (cookie export)
 ├── smart_scraper.py              # Checks whether current cookies still avoid CAPTCHA
-├── playwright_state.json         # Your exported session cookies (do not commit your real one)
+├── playwright_state.json         # Exported session cookies (do not commit the real one)
 ├── scrapy.cfg
 └── requirements.txt
 ```
 
-## Quick Start (Beginner-Friendly)
+## Quick Start 
 
 ### Prerequisites
 
@@ -235,13 +231,13 @@ At a high level:
 4. The Scrapy pipeline converts items into Django model rows and saves them to Postgres
 5. Django Admin + DRF API read the same database tables
 
-## Architecture Diagrams (Optional)
+## Architecture Diagrams
 
 <img alt="Overall architecture diagram" src="picture/Chart.png" />
 
 <img alt="Spiders diagram" src="picture/Spider.png" />
 
-## Internal Deep Dive (Developer-Focused)
+## Internal Deep Dive 
 
 ### 1) Scrapy → Playwright integration
 
