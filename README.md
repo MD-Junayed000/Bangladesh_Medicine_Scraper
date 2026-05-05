@@ -1,326 +1,343 @@
 # Bangladesh Medicine Scraper
 
-A web scraping project that extracts pharmaceutical data from [medex.com.bd](https://medex.com.bd) using **Scrapy + Playwright** with **Chrome session management**. This project successfully bypasses CAPTCHA challenges and extracts comprehensive medicine data.
+Scrapes public pharmaceutical catalogue data from [medex.com.bd](https://medex.com.bd) using **Scrapy + Playwright**, then saves it to **PostgreSQL** through a **Django** project (with a simple **Django REST Framework** API on top).
 
-<img  width="1899" height="1078" alt="image" src="picture/cover.png" />
+<img width="1899" height="1078" alt="Bangladesh Medicine Scraper cover" src="picture/cover.png" />
 
-## **Project Status:**
+## What This Project Does (in 30 seconds)
 
-- **CAPTCHA bypass** - Completely solved using Chrome cookies
-- **Data extraction** - Successfully scrapes 200+ manufacturers
-- **Chrome integration** - Uses existing Chrome session
-- **No new browsers** - No Chromium spawning issues
-- **Stable scraping** - Reliable data collection
+- Crawls MedEx listing pages (companies, generics, brands/medicines, drug classes).
+- Uses a real browser session (Playwright + Chrome) and **reuses your cookies** from `playwright_state.json` to reduce anti-bot challenges.
+- Extracts structured data into Django models and stores them in Postgres.
+- Exposes a token-authenticated REST API so you can query the stored data.
 
-## **Complete Setup Guide**
+> Note on “CAPTCHA bypass”: this repo does not “solve” CAPTCHAs automatically. It **reuses an already verified browser session** (cookies) so the site is less likely to show a challenge. If you see a CAPTCHA, refresh the session cookies and try again.
 
-> **Quick Reference for Experienced Users:**
->
-> ```bash
-> # 1. Install PostgreSQL and create database
-> # 2. Create .env file with DB credentials
-> # 3. python -m venv .venv && source .venv/bin/activate
-> # 4. pip install -r requirements.txt
-> # 5. python manage.py migrate && python manage.py createsuperuser
-> # 6. python manage.py runserver
-> # 7. Open http://127.0.0.1:8000/admin/
-> ```
+> Privacy note: `playwright_state.json` contains session cookies. Treat it like a password. Use your own local copy and avoid committing real cookies back to git.
 
-### 1. **Install PostgreSQL**
+## Who This README Is For
 
-```bash
-# Download and install PostgreSQL from: https://www.postgresql.org/download/
-# Or use package manager:
-# Windows: Download installer from postgresql.org
-# Ubuntu/Debian: sudo apt-get install postgresql postgresql-contrib
-# macOS: brew install postgresql
+- **Absolute beginners**: follow “Quick Start” and read “Concepts” to understand what’s happening.
+- **Developers**: jump to “Internal Deep Dive” to see where Playwright hooks into Scrapy and how data is persisted.
+
+## Concepts: Scrapy vs Playwright (Basics)
+
+### What is Scrapy?
+
+Scrapy is a Python framework for building crawlers:
+
+- You write a **spider** that starts from one or more URLs.
+- Scrapy downloads each page and calls your `parse()` functions.
+- Your code extracts data and yields **items** (structured objects).
+- Items go through **pipelines** (e.g., save to database, deduplicate, export).
+
+In this repo, Scrapy is responsible for:
+
+- “Visit all pages” (pagination + following detail links).
+- “Extract fields from HTML”.
+- “Send extracted objects to the database pipeline”.
+
+### What is Playwright?
+
+Playwright is a browser automation tool:
+
+- It runs a real browser engine (Chrome/Chromium/etc.).
+- It can execute JavaScript, wait for dynamic content, and maintain cookies/session.
+- It’s useful when websites block plain HTTP bots or heavily depend on JS rendering.
+
+In this repo, Playwright is used to:
+
+- Fetch pages through a **real browser context**.
+- Load cookies from `playwright_state.json` so requests look like a real, previously-verified user session.
+- Wait for pages to fully load before Scrapy parses them.
+
+### What does “Scrapy + Playwright scraper” mean?
+
+Scrapy is the “crawler brain” and parsing engine, but for selected requests it delegates the actual downloading to Playwright.
+
+Concretely, spider requests include:
+
+- `meta["playwright"] = True` so Scrapy uses the Playwright downloader
+- `playwright_page_methods` like `wait_for_load_state("networkidle")` so the page is ready before parsing
+
+See examples in `medexbot/spiders/manufacturer_spider.py` and `medexbot/spiders/generic_spider.py`.
+
+## Project Structure (What lives where)
+
+```
+Bangladesh_Medicine_Scraper/
+├── core/                         # Django settings + root URLs
+├── crawler/                      # Django models + admin + management commands
+├── api/                          # DRF serializers + views + routes
+├── medexbot/                     # Scrapy project (settings, spiders, pipeline)
+├── run_scrapy_with_playwright.py # Runs spiders with Chrome cookies via Playwright
+├── save_state_from_chrome.py     # Creates/updates playwright_state.json (cookie export)
+├── smart_scraper.py              # Checks whether current cookies still avoid CAPTCHA
+├── playwright_state.json         # Your exported session cookies (do not commit your real one)
+├── scrapy.cfg
+└── requirements.txt
 ```
 
-### 2. **Setup PostgreSQL Database**
+## Quick Start (Beginner-Friendly)
+
+### Prerequisites
+
+- Python 3.10+
+- PostgreSQL
+- Google Chrome installed
+
+### 1) Create a virtual environment + install dependencies
 
 ```bash
-# Connect to PostgreSQL as superuser
+python -m venv .venv
+
+# Windows:
+.venv\Scripts\activate
+# macOS/Linux:
+source .venv/bin/activate
+
+pip install -r requirements.txt
+
+# Playwright needs browser binaries too:
+playwright install
+```
+
+### 2) Create and configure Postgres + `.env`
+
+Create DB + user (example):
+
+```bash
 psql -U postgres
 
-# Create database and user (run these commands in psql):
- ``bash
 CREATE DATABASE bd_medicine_scraper;
 CREATE USER medicine_user WITH PASSWORD 'your_secure_password';
 GRANT ALL PRIVILEGES ON DATABASE bd_medicine_scraper TO medicine_user;
-ALTER USER medicine_user CREATEDB;
 \q
- ``
-# Expected output:
-# CREATE DATABASE
-# CREATE ROLE
-# GRANT
-# ALTER ROLE
-# You are now connected to database "bd_medicine_scraper" as user "medicine_user".
 ```
 
-### 3. **Create Environment File**
+Create `.env` in project root:
 
 ```bash
-# Create .env file in project root
-touch .env
-
-# Add database configuration to .env file:
-DB_ENGINE=django.db.backends.postgresql
 DB_NAME=bd_medicine_scraper
 DB_USERNAME=medicine_user
 DB_PASSWORD=your_secure_password
 DB_HOST=localhost
 DB_PORT=5432
+
 SECRET_KEY=your-secret-key-here
 DEBUG=True
 ```
 
-### 4. **Setup Python Environment**
+### 3) Run migrations + start Django
 
 ```bash
-# Create virtual environment
-python -m venv .venv
-
-# Activate virtual environment
-# Windows:
-.venv\Scripts\activate
-# Linux/Mac:
-source .venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Expected output: Successfully installed [packages...]
-```
-
-### 5. **Setup Django Database**
-
-```bash
-# Apply database migrations
-python manage.py makemigrations
 python manage.py migrate
-
-# Expected output:
-# Operations to perform:
-#   Apply all migrations: admin, auth, contenttypes, crawler, sessions
-# Running migrations:
-#   Applying [migration_name]... OK
-
-# Create Django superuser
 python manage.py createsuperuser
-# Follow prompts to create username, email, and password
-# Expected output: Superuser created successfully.
-```
-
-### 6. **Run Django Server**
-
-```bash
-# In a new terminal (keep virtual environment active)
 python manage.py runserver
-
-# Expected output:
 ```
 
-<img width="1919" height="338" alt="image" src="picture/one.png" />
+Open:
+
+- Admin: http://127.0.0.1:8000/admin/
+
+### 4) Create/refresh the Chrome session cookies (`playwright_state.json`)
+
+The scraper expects your MedEx cookies in `playwright_state.json`.
+
+Option A (scripted export; Windows-style profile lookup):
 
 ```bash
-
-# Watching for file changes with StatReloader
-# Performing system checks...
-# System check identified no issues (0 silenced).
-# Django version 3.2.12, using settings 'core.settings'
-# Starting development server at http://127.0.0.1:8000/
-# Quit the server with CONTROL-C.
-
-# Open http://127.0.0.1:8000/admin/ in your browser
-# Login with your Django superuser account
-```
-
-<img width="1919" height="699" alt="image" src="picture/three.png" />
-
-```bash
-### 1. **Verify Setup**
-
-# Check if server is running (should show Django welcome page)
-curl http://127.0.0.1:8000/
-
-# Check admin interface (should show login page)
-curl http://127.0.0.1:8000/admin/
-
-# Expected output: HTML content with Django admin interface
-```
-
-**🎉 Congratulations! Your Django server is now running successfully at http://127.0.0.1:8000/**
-
-````
-
-### 2. **Setup Chrome Session**
-```bash
-# Extract cookies from your Chrome browser
 python save_state_from_chrome.py
+```
 
-# This will:
-# 1. Open medex.com.bd in Chrome
-# 2. Allow you to solve any CAPTCHA manually
-# 3. Extract cookies and save to ***playwright_state.json*** / update the existing one as previous sessions was given
-````
+Option B (manual, works on any OS):
 
-<img width="1919" height="1079" alt="image" src="picture/four.png" />
+1. Open Chrome → go to `https://medex.com.bd/companies?page=1`
+2. If a CAPTCHA appears, solve it once
+3. Press `F12` → **Application** → **Cookies** → `https://medex.com.bd`
+4. Export/copy cookie values into `playwright_state.json` (Playwright “storage state” format)
 
-### 7. **Run Spiders**
+### 5) Run spiders (scrape data into the database)
 
 ```bash
-# Run manufacturer spider (recommended first)
+# Recommended order:
 python run_scrapy_with_playwright.py manufacturer
-
-# Run other spiders
+python run_scrapy_with_playwright.py drug_class
 python run_scrapy_with_playwright.py generic
 python run_scrapy_with_playwright.py med
-python run_scrapy_with_playwright.py drug_class
 ```
 
-### 8. **Expected Output**
+Optional: a “no browser” mode exists for the generic spider, but it will only work when the site does not require CAPTCHA/challenges:
 
 ```bash
-# When spiders crawl over each page, the Database will fill up eventually for the specifically mentioned table (export to CSV for own use):
+python run_generic_direct.py
 ```
 
-<img width="1893" height="850" alt="image" src="picture/five.png" />
-
-<img width="1897" height="980" alt="image" src="picture/six.png" />
-
-## **Project Structure**
-
-```
-bd-medicine-scraper/
-├── core/                    # Django project settings
-├── crawler/                 # Django models and admin
-├── medexbot/               # Scrapy spiders and settings
-├── api/                    # REST API endpoints
-├── run_scrapy_with_playwright.py  # Main spider runner
-├── save_state_from_chrome.py      # Chrome cookie extractor
-├── smart_scraper.py               # Session validator
-├── playwright_state.json          # Chrome session state
-└── requirements.txt               # Python dependencies based on python version 3.10.0
-```
-
-## **Overall Architecture**
-
-<img  src="picture/Chart.png" />
-
-**_spider's used:_**
-
-<img  src="picture/Spider.png" />
-
-## **Key Features**
-
-### **Chrome Session Management**
-
-- Uses your existing Chrome browser session
-- Loads cookies from `playwright_state.json`
-- No new Chromium browsers spawned
-- CAPTCHA bypass through authenticated session
-
-### **Data Models**
-
-- **Manufacturers** - Pharmaceutical companies
-- **Generics** - Active ingredients
-- **Medicines** - Brand name drugs
-- **Drug Classes** - Therapeutic categories
-
-### **Scraping Capabilities**
-
-- **200+ manufacturers** successfully scraped
-- **Comprehensive medicine data** including:
-  - Brand names and generic names
-  - Strengths and formulations
-  - Manufacturer information
-  - Package details and pricing
-  - Therapeutic classifications
-
-## **Technical Stack**
-
-- **Backend**: Django 3.2.12 + Django REST Framework
-- **Scraping**: Scrapy 2.11.2 + Playwright
-- **Browser**: Chrome with session persistence
-- **Database**: PostgreSQL (configured)
-- **Authentication**: Chrome cookies + session state
-- **Data Quality**: High accuracy with proper relationships
-- **Session Stability**: Persistent Chrome authentication
-
-## **Troubleshooting**
-
-### **Session Expired**
+If you want to quickly check if your cookies are still valid:
 
 ```bash
-# Check if session is still valid
 python smart_scraper.py --validate
-
-# If expired, refresh cookies
-python save_state_from_chrome.py
 ```
 
-### **CAPTCHA Appears**
+## Output: Database, Admin, API
 
-1. Open medex.com.bd in Chrome manually
-2. Solve the CAPTCHA
-3. Run `python save_state_from_chrome.py`
-4. Retry your spider
+### Django Admin (quickest way to see results)
 
-### **Database Issues**
+Go to http://127.0.0.1:8000/admin/ and browse:
+
+- Manufacturers
+- Generics
+- Medicines (brands)
+- Drug classes
+
+### REST API (Token Auth)
+
+1) Create a token:
+
+- Endpoint: `POST /api-token-auth/` (see `core/urls.py`)
+
+Example with curl:
 
 ```bash
-# If you get connection errors:
-# 1. Check if PostgreSQL is running:
-# Windows: Check Services app for "postgresql-x64-15"
-# Linux: sudo systemctl status postgresql
-# macOS: brew services list | grep postgresql
-
-# 2. Verify database connection:
-psql -U medicine_user -d bd_medicine_scraper -h localhost
-# Enter password when prompted
-
-# 3. Check .env file exists and has correct values:
-cat .env
-
-# 4. If migrations fail, reset database:
-python manage.py flush
-python manage.py migrate
+curl -X POST http://127.0.0.1:8000/api-token-auth/ \
+  -H "Content-Type: application/json" \
+  -d '{"username":"YOUR_USER","password":"YOUR_PASS"}'
 ```
 
-### **Common Setup Issues**
+2) Call API endpoints with the token:
 
-- **Port 5432 already in use**: Change DB_PORT in .env to 5433 or another free port
-- **Permission denied**: Ensure medicine_user has proper privileges on database
-- **Virtual environment not activated**: Look for (.venv) prefix in terminal prompt
-- **Dependencies not found**: Run `pip install -r requirements.txt` again
+```bash
+curl http://127.0.0.1:8000/api/medicines/ \
+  -H "Authorization: Token YOUR_TOKEN"
+```
 
-## 📈 **Data Output**
+API routes are defined in `api/urls.py`, and implemented using DRF generic views in `api/views.py`.
 
-The scraper extracts structured data including:
+### Export to CSV (optional)
 
-- Company profiles and contact information
-- Medicine catalogs with detailed specifications
-- Generic drug information and monographs
-- Therapeutic classifications and indications
-- Dosage forms and administration methods
+There is a management command you can use to export a model to CSV:
 
-## **Contributing**
+```bash
+python manage.py export_csv medicine /tmp/medicine_export
+python manage.py export_csv generic /tmp/generic_export
+python manage.py export_csv manufacturer /tmp/manufacturer_export
+```
 
-1. Fork the repository
+See `crawler/management/commands/export_csv.py`.
+
+## How It Works (System Overview)
+
+At a high level:
+
+1. You provide a verified MedEx session (cookies) → `playwright_state.json`
+2. Spiders send requests with `meta["playwright"]=True` so Scrapy downloads them via Playwright
+3. Spiders parse HTML and yield “items”
+4. The Scrapy pipeline converts items into Django model rows and saves them to Postgres
+5. Django Admin + DRF API read the same database tables
+
+## Architecture Diagrams (Optional)
+
+<img alt="Overall architecture diagram" src="picture/Chart.png" />
+
+<img alt="Spiders diagram" src="picture/Spider.png" />
+
+## Internal Deep Dive (Developer-Focused)
+
+### 1) Scrapy → Playwright integration
+
+Playwright is wired into Scrapy via `scrapy-playwright` settings in `medexbot/settings.py`:
+
+- `DOWNLOAD_HANDLERS` routes `http/https` downloads to `ScrapyPlaywrightDownloadHandler`
+- `PLAYWRIGHT_CONTEXTS["default"]["storage_state"]` points to `playwright_state.json`
+
+Spiders opt-in per request by setting request meta (example pattern):
+
+- `meta["playwright"] = True`
+- `meta["playwright_context"] = "default"`
+- `meta["playwright_page_methods"] = [PageMethod("wait_for_load_state", "networkidle"), ...]`
+
+This is why you get “browser-rendered HTML” inside Scrapy’s `response`.
+
+### 2) The runner script and Twisted/asyncio
+
+`run_scrapy_with_playwright.py` installs an asyncio-compatible Twisted reactor before importing Scrapy/Django.
+This matters because Playwright is async and `scrapy-playwright` expects the Asyncio reactor to be installed early.
+
+### 3) Spiders (what they extract)
+
+- `ManufacturerSpider` (`medexbot/spiders/manufacturer_spider.py`)
+  - Starts at `/companies?page=1`
+  - Parses company rows and paginates
+- `DrugClassSpider` (`medexbot/spiders/drug_class_spider.py`)
+  - Starts at `/drug-classes`
+  - Follows each drug class page and counts linked generics
+- `GenericSpider` (`medexbot/spiders/generic_spider.py`)
+  - Starts at `/generics?page=1`
+  - Follows each generic page and extracts monograph/description sections
+- `MedSpider` (`medexbot/spiders/med_spider.py`)
+  - Crawls `/brands...` pages
+  - Extracts medicine/brand data
+  - Writes mapping hints to `manufacturer_id.txt` and `generic_id.txt` to attach relations later
+
+All spiders include a basic “challenge page” check (look for `captcha` / `challenge`) and stop early if a challenge is detected.
+
+### 4) Items and the database pipeline
+
+Items are Django-backed via `scrapy-djangoitem` (see `medexbot/items.py`), so an item can be saved directly into the corresponding Django model.
+
+`MedexbotPipeline` (`medexbot/pipelines.py`) does the persistence:
+
+- Routes items by type (medicine vs generic vs manufacturer vs drug class).
+- Avoids duplicates by checking the unique ID field first (`brand_id`, `generic_id`, etc.).
+- For medicines, tries to attach `Generic` and `Manufacturer` foreign keys using mapping files:
+  - `generic_id.txt` (brand_id → generic_id)
+  - `manufacturer_id.txt` (brand_id → manufacturer_id)
+  - If a Generic is missing, it can create a lightweight placeholder row and fill it later when the real Generic item arrives.
+
+This mapping approach is used because the medicine page often contains only “links” to generic/manufacturer pages, not full objects.
+
+### 5) Django REST Framework API
+
+The DRF API provides read-only list/detail views (token-authenticated) for:
+
+- Medicines
+- Generics
+- Manufacturers
+- Drug classes
+
+Routes: `api/urls.py`  
+Views: `api/views.py`  
+Serializers: `api/serializers.py`
+
+## Troubleshooting
+
+### “CAPTCHA detected” / “challenge page”
+
+- Re-check your session: `python smart_scraper.py --validate`
+- Refresh cookies: regenerate `playwright_state.json` (solve CAPTCHA once in Chrome, then export cookies again)
+- Try again with a slower crawl (lower concurrency/delay) if needed
+
+### Playwright errors (browser not installed)
+
+After `pip install -r requirements.txt`, you still need:
+
+```bash
+playwright install
+```
+
+### Database connection errors
+
+- Confirm Postgres is running
+- Confirm `.env` values match your DB/user/password
+- Verify with:
+
+```bash
+psql -U medicine_user -d bd_medicine_scraper -h localhost
+```
+
+## Contributing
+
+1. Fork the repo
 2. Create a feature branch
-3. Test your changes thoroughly
-4. Submit a pull request
-
-## **Support**
-
-If you encounter issues:
-
-1. Check the troubleshooting section above
-2. Verify your Chrome session is valid
-3. Ensure all dependencies are installed
-4. Check the terminal output for error messages
-
----
-
-**🎉 The CAPTCHA problem is completely solved! Scraper now works reliably with Chrome session management.**
+3. Test your changes
+4. Open a PR
